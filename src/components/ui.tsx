@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useTween } from '../lib/anim';
 
 /* ---------- Icônes (traits simples, reprises du design) ---------- */
@@ -80,14 +81,18 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
     document.addEventListener('keydown', onKey);
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
+    // La barre d'onglets s'efface tant qu'une feuille est ouverte.
+    document.body.classList.add('sheet-open');
     return () => {
       document.removeEventListener('keydown', onKey);
       document.body.style.overflow = overflow;
+      document.body.classList.remove('sheet-open');
       prev?.focus?.();
     };
   }, []);
 
-  return (
+  // Rendue directement dans <body> : rien (barre d'onglets comprise) ne peut passer devant.
+  return createPortal(
     <>
       <div className={`scrim${closing ? ' closing' : ''}`} onClick={close} aria-hidden="true" />
       <div ref={ref} className={`sheet${closing ? ' closing' : ''}`} role="dialog" aria-modal="true" aria-label={title} tabIndex={-1}>
@@ -100,7 +105,8 @@ export function Sheet({ title, onClose, children }: { title: string; onClose: ()
         </div>
         {children(close)}
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 

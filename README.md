@@ -35,6 +35,13 @@ Autres commandes :
 - `npm test` : lance les tests du calcul de paie (`src/lib/pay.test.ts`).
 - `npm run build` : fabrique la version finale dans `dist/`.
 
+## Employeurs et postes (intérim)
+
+Onglet Postes : touchez un employeur pour ouvrir sa page (nom, taux, heures de
+contrat, ses postes et son cycle de rotation). Chaque employeur a ses propres
+postes ; « Repos » et « Congé » sont communs à tous. Dans la feuille d'ajout,
+on choisit d'abord l'employeur, puis l'un de ses postes.
+
 ## Activer le mode démo
 
 Réglages › Mode démo › interrupteur. L'app affiche un planning **fictif**

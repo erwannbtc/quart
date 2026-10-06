@@ -9,21 +9,23 @@ import {
   shiftPay,
   spanMinutes
 } from './pay';
-import { defaultData, DEFAULT_SETTINGS, DEFAULT_TYPES } from './defaults';
+import { COMMON_TYPES, defaultData, DEFAULT_SETTINGS, workTypesFor } from './defaults';
+import { validateData } from './validate';
 import { buildDemo } from './demo';
 import type { AppData, Employer, Shift } from './types';
 
-const type = (id: string) => DEFAULT_TYPES.find((t) => t.id === id)!;
+const TYPES = [...workTypesFor('e'), ...COMMON_TYPES];
+const type = (key: string) => TYPES.find((t) => t.id === key || t.id === `e-${key}`)!;
 const emp: Employer = { id: 'e', name: 'Test', rate: 14.2, contractHours: 151.67 };
 const S = DEFAULT_SETTINGS;
 
 function shift(date: string, typeId: string, over: Partial<Shift> = {}): Shift {
   const t = type(typeId);
-  return { id: `${date}-${typeId}`, date, typeId, start: t.start, end: t.end, pause: t.pause, employerId: 'e', ...over };
+  return { id: `${date}-${typeId}`, date, typeId: t.id, start: t.start, end: t.end, pause: t.pause, employerId: 'e', ...over };
 }
 
 function data(shifts: Shift[], employers: Employer[] = [emp]): AppData {
-  return { ...defaultData(), employers, shifts };
+  return { ...defaultData(), shiftTypes: TYPES, employers, shifts };
 }
 
 describe('durées', () => {
@@ -220,5 +222,45 @@ describe('mode démo (octobre 2026, aujourd’hui le 15)', () => {
   it('ne contient que l’employeur fictif', () => {
     const demo = buildDemo(2026, 10);
     expect(demo.employers.map((e) => e.name)).toEqual(['Atelier Nord']);
+  });
+});
+
+describe('sauvegardes', () => {
+  it('convertit une sauvegarde au format 1 : chaque employeur reçoit ses postes', () => {
+    const v1 = {
+      version: 1,
+      shiftTypes: [
+        { id: 'matin', name: 'Matin', code: 'M', color: '#F5A623', start: 300, end: 780, pause: 30, kind: 'work', leaveHours: 0 },
+        { id: 'repos', name: 'Repos', code: '·', color: '#6E788A', start: 0, end: 0, pause: 0, kind: 'rest', leaveHours: 0 }
+      ],
+      employers: [
+        { id: 'a', name: 'A', rate: 12, contractHours: 151.67 },
+        { id: 'b', name: 'B', rate: 13, contractHours: 0 }
+      ],
+      shifts: [
+        { id: 's1', date: '2026-10-05', typeId: 'matin', start: 300, end: 780, pause: 30, employerId: 'a' },
+        { id: 's2', date: '2026-10-06', typeId: 'matin', start: 300, end: 780, pause: 30, employerId: 'b' },
+        { id: 's3', date: '2026-10-07', typeId: 'repos', start: 0, end: 0, pause: 0, employerId: 'b' }
+      ],
+      settings: DEFAULT_SETTINGS
+    };
+    const d = validateData(v1)!;
+    expect(d.version).toBe(2);
+    expect(d.shiftTypes.find((t) => t.id === 'matin')!.employerId).toBe('a');
+    expect(d.shiftTypes.find((t) => t.id === 'repos')!.employerId).toBeNull();
+    const copy = d.shiftTypes.find((t) => t.employerId === 'b')!;
+    expect(copy.name).toBe('Matin');
+    expect(d.shifts.find((s) => s.id === 's2')!.typeId).toBe(copy.id);
+    expect(d.shifts.find((s) => s.id === 's3')!.typeId).toBe('repos');
+  });
+
+  it('refuse un fichier étranger', () => {
+    expect(validateData({ hello: 1 })).toBeNull();
+    expect(validateData({ version: 3, shiftTypes: [], employers: [], shifts: [] })).toBeNull();
+  });
+
+  it('les données de départ sont valides', () => {
+    expect(validateData(defaultData())).not.toBeNull();
+    expect(validateData(buildDemo(2026, 10))).not.toBeNull();
   });
 });

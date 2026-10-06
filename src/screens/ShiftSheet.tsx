@@ -13,16 +13,35 @@ export function ShiftSheet({ date, onClose, onSaved }: { date: string; onClose: 
   const st = useStore();
   const data = activeData(st);
   const existing = data.shifts.find((s) => s.date === date);
-  const firstWork = data.shiftTypes.find((t) => t.kind === 'work') ?? data.shiftTypes[0];
-  const initType = data.shiftTypes.find((t) => t.id === existing?.typeId) ?? firstWork;
+  // Postes proposés : ceux de l'employeur choisi + les jours sans travail communs.
+  const typesFor = (empId: string) => [
+    ...data.shiftTypes.filter((t) => t.employerId === empId),
+    ...data.shiftTypes.filter((t) => t.employerId === null)
+  ];
+  const initEmp = existing?.employerId ?? data.employers[0].id;
+  const initType =
+    data.shiftTypes.find((t) => t.id === existing?.typeId) ??
+    typesFor(initEmp).find((t) => t.kind === 'work') ??
+    typesFor(initEmp)[0] ??
+    data.shiftTypes[0];
 
   const [form, setForm] = useState<Omit<Shift, 'id'>>(() =>
     existing
       ? { ...existing }
-      : { date, typeId: initType.id, start: initType.start, end: initType.end, pause: initType.pause, employerId: data.employers[0].id }
+      : { date, typeId: initType.id, start: initType.start, end: initType.end, pause: initType.pause, employerId: initEmp }
   );
 
   const type = data.shiftTypes.find((t) => t.id === form.typeId) ?? initType;
+  const choices = typesFor(form.employerId);
+  // Un ancien poste rattaché à un autre employeur reste visible pour pouvoir le garder.
+  if (!choices.some((t) => t.id === type.id)) choices.unshift(type);
+
+  const pickEmployer = (empId: string) => {
+    const list = typesFor(empId);
+    if (list.some((t) => t.id === form.typeId)) return set({ employerId: empId });
+    const w = list.find((t) => t.kind === 'work') ?? list[0];
+    set(w ? { employerId: empId, typeId: w.id, start: w.start, end: w.end, pause: w.pause } : { employerId: empId });
+  };
   const employer = data.employers.find((e) => e.id === form.employerId) ?? data.employers[0];
   const worked = type.kind === 'work';
   const pay = useMemo(() => shiftPay({ ...form, id: 'preview' }, type, employer, data.settings), [form, type, employer, data.settings]);
@@ -59,9 +78,22 @@ export function ShiftSheet({ date, onClose, onSaved }: { date: string; onClose: 
       {(close) => (
         <>
           <div className="field">
-            <div className="flabel" id="type-lbl">Type de poste</div>
+            <label htmlFor="shift-emp">Employeur</label>
+            <div className="select-wrap">
+              <span>{employer.name}</span>
+              <span className="right">{fmt(employer.rate)} €/h<span className="muted">{Icon.chevron()}</span></span>
+              <select id="shift-emp" value={form.employerId} onChange={(e) => pickEmployer(e.target.value)}>
+                {data.employers.map((e) => (
+                  <option key={e.id} value={e.id}>{e.name} ({fmt(e.rate)} €/h)</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="field">
+            <div className="flabel" id="type-lbl">Poste</div>
             <div className="grid3" role="radiogroup" aria-labelledby="type-lbl">
-              {data.shiftTypes.map((t) => {
+              {choices.map((t) => {
                 const on = t.id === form.typeId;
                 return (
                   <button
@@ -100,19 +132,6 @@ export function ShiftSheet({ date, onClose, onSaved }: { date: string; onClose: 
                 decLabel="Pause, 5 minutes de moins" incLabel="Pause, 5 minutes de plus" />
             </div>
             {worked && form.end <= form.start && <div className="hint">Le poste se termine le lendemain.</div>}
-          </div>
-
-          <div className="field">
-            <label htmlFor="shift-emp">Employeur</label>
-            <div className="select-wrap">
-              <span>{employer.name}</span>
-              <span className="right">{fmt(employer.rate)} €/h<span className="muted">{Icon.chevron()}</span></span>
-              <select id="shift-emp" value={form.employerId} onChange={(e) => set({ employerId: e.target.value })}>
-                {data.employers.map((e) => (
-                  <option key={e.id} value={e.id}>{e.name} ({fmt(e.rate)} €/h)</option>
-                ))}
-              </select>
-            </div>
           </div>
 
           <div className="summary">

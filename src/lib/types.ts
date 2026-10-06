@@ -15,6 +15,8 @@ export interface ShiftType {
   kind: ShiftKind;
   /** Heures payées pour un congé. */
   leaveHours: number;
+  /** Employeur auquel appartient ce poste ; null = commun à tous (repos, congé). */
+  employerId: string | null;
 }
 
 export interface Employer {
@@ -58,7 +60,7 @@ export interface PaySettings {
 }
 
 export interface AppData {
-  version: 1;
+  version: 2;
   shiftTypes: ShiftType[];
   employers: Employer[];
   shifts: Shift[];

@@ -38,6 +38,21 @@ export function Home({ onOpenDay, pop }: { onOpenDay: (date: string) => void; po
     setYm([Math.floor(idx / 12), (idx % 12) + 1]);
   };
 
+  // Légende : postes utilisés ce mois-ci (sinon ceux du premier employeur), sans doublon.
+  const legend = useMemo(() => {
+    const prefix = `${y}-${String(m).padStart(2, '0')}-`;
+    const used = new Set(data.shifts.filter((s) => s.date.startsWith(prefix)).map((s) => s.typeId));
+    const first = data.employers[0]?.id;
+    const list = data.shiftTypes.filter((t) => (used.size ? used.has(t.id) : t.employerId === first || t.employerId === null));
+    const seen = new Set<string>();
+    return list.filter((t) => {
+      const k = `${t.name}|${t.color}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+  }, [data, y, m]);
+
   const cotis = data.settings.cotisations;
   const isLong = sum.brutToDate >= 10000;
   const addDate = ty === y && tm === m ? today : toISO(y, m, 1);
@@ -102,7 +117,7 @@ export function Home({ onOpenDay, pop }: { onOpenDay: (date: string) => void; po
       <Calendar y={y} m={m} today={today} byDate={byDate} types={types} pop={pop} onOpenDay={onOpenDay} />
 
       <div className="legend" aria-label="Légende">
-        {data.shiftTypes.map((t) => (
+        {legend.map((t) => (
           <span key={t.id}><i style={{ background: t.color }} />{t.name}</span>
         ))}
         <span><i className="dot" />Férié</span>

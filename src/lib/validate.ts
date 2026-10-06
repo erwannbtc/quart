@@ -14,6 +14,7 @@ const isColor = (v: unknown): v is string => typeof v === 'string' && /^#[0-9a-f
 const KINDS: ShiftKind[] = ['work', 'rest', 'leave'];
 
 function shiftType(x: unknown): ShiftType | null {
+  // employerId est vérifié plus bas (il doit désigner un employeur existant).
   if (!isObj(x) || !str(x.id) || !str(x.name, 40) || !str(x.code, 3) || !isColor(x.color)) return null;
   if (!minutes(x.start) || !minutes(x.end) || !num(x.pause, 0, 600)) return null;
   if (!KINDS.includes(x.kind as ShiftKind)) return null;
@@ -26,7 +27,8 @@ function shiftType(x: unknown): ShiftType | null {
     end: x.end,
     pause: x.pause,
     kind: x.kind as ShiftKind,
-    leaveHours: num(x.leaveHours, 0, 24) ? x.leaveHours : 0
+    leaveHours: num(x.leaveHours, 0, 24) ? x.leaveHours : 0,
+    employerId: typeof x.employerId === 'string' ? x.employerId : null
   };
 }
 
@@ -51,16 +53,47 @@ function all<T>(list: unknown[], fn: (x: unknown) => T | null): T[] | null {
   return out;
 }
 
-/** Renvoie des données propres, ou null si le contenu n'est pas un fichier Quart valide. */
+/**
+ * Renvoie des données propres (format 2), ou null si le contenu n'est pas un
+ * fichier Quart valide. Les sauvegardes au format 1 (postes communs à tous les
+ * employeurs) sont converties : chaque employeur reçoit sa copie des postes.
+ */
 export function validateData(x: unknown): AppData | null {
-  if (!isObj(x) || x.version !== 1) return null;
+  if (!isObj(x) || (x.version !== 1 && x.version !== 2)) return null;
   if (!Array.isArray(x.shiftTypes) || !Array.isArray(x.employers) || !Array.isArray(x.shifts)) return null;
-  const shiftTypes = all(x.shiftTypes, shiftType);
+  let shiftTypes = all(x.shiftTypes, shiftType);
   const employers = all(x.employers, employer);
-  const shifts = all(x.shifts, shift);
+  let shifts = all(x.shifts, shift);
   if (!shiftTypes?.length || !employers?.length || !shifts) return null;
-  const typeIds = new Set(shiftTypes.map((t) => t.id));
   const empIds = new Set(employers.map((e) => e.id));
+  const firstEmp = employers[0].id;
+
+  if (x.version === 1) {
+    const work = shiftTypes.filter((t) => t.kind === 'work');
+    const copies: ShiftType[] = [];
+    const remap = new Map<string, string>(); // `${employé}|${type}` → type copié
+    for (const e of employers.slice(1)) {
+      for (const t of work) {
+        const id = `${t.id}~${e.id}`;
+        copies.push({ ...t, id, employerId: e.id });
+        remap.set(`${e.id}|${t.id}`, id);
+      }
+    }
+    shiftTypes = [
+      ...shiftTypes.map((t) => ({ ...t, employerId: t.kind === 'work' ? firstEmp : null })),
+      ...copies
+    ];
+    shifts = shifts.map((s) => ({ ...s, typeId: remap.get(`${s.employerId}|${s.typeId}`) ?? s.typeId }));
+  } else {
+    // Un poste travaillé doit appartenir à un employeur existant.
+    shiftTypes = shiftTypes.map((t) => {
+      if (t.employerId !== null && !empIds.has(t.employerId)) return { ...t, employerId: t.kind === 'work' ? firstEmp : null };
+      if (t.employerId === null && t.kind === 'work') return { ...t, employerId: firstEmp };
+      return t;
+    });
+  }
+
+  const typeIds = new Set(shiftTypes.map((t) => t.id));
   if (shifts.some((s) => !typeIds.has(s.typeId) || !empIds.has(s.employerId))) return null;
 
   const s = isObj(x.settings) ? x.settings : {};
@@ -68,7 +101,7 @@ export function validateData(x: unknown): AppData | null {
   const D = DEFAULT_SETTINGS;
   const pct = (v: unknown, d: number) => (num(v, 0, 500) ? v : d);
   return {
-    version: 1,
+    version: 2,
     shiftTypes,
     employers,
     shifts,

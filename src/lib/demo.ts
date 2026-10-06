@@ -1,6 +1,6 @@
 // Mode démo : données 100 % FICTIVES, pour filmer l'app sans données personnelles.
 import type { AppData, Shift } from './types';
-import { DEFAULT_SETTINGS, DEFAULT_TYPES } from './defaults';
+import { COMMON_TYPES, DEFAULT_SETTINGS, workTypesFor } from './defaults';
 import { addDays, dayOfWeek, daysInMonth, diffDays, mondayOf, toISO } from './dates';
 
 export interface DemoData extends AppData {
@@ -8,12 +8,16 @@ export interface DemoData extends AppData {
   today: string;
 }
 
+const EMP = 'demo-emp';
+
 /**
  * Planning 2x8 fictif sur le mois précédent, le mois choisi et le suivant :
  * semaines alternées matin / après-midi du lundi au vendredi, repos le week-end,
  * un jour de congé vers le 23 du mois choisi.
  */
 export function buildDemo(year: number, month: number): DemoData {
+  const types = [...workTypesFor(EMP), ...COMMON_TYPES.map((t) => ({ ...t }))];
+  const byId = new Map(types.map((t) => [t.id, t]));
   const first = toISO(year, month, 1);
   const anchor = mondayOf(first);
   const prev = month === 1 ? [year - 1, 12] : [year, month - 1];
@@ -28,17 +32,17 @@ export function buildDemo(year: number, month: number): DemoData {
   for (let d = start; d <= end; d = addDays(d, 1)) {
     const dow = dayOfWeek(d);
     const week = Math.floor(diffDays(anchor, d) / 7);
-    let typeId = ((week % 2) + 2) % 2 === 0 ? 'matin' : 'apres';
+    let typeId = ((week % 2) + 2) % 2 === 0 ? `${EMP}-matin` : `${EMP}-apres`;
     if (dow === 0 || dow === 6) typeId = 'repos';
     if (d === leave) typeId = 'conge';
-    const t = DEFAULT_TYPES.find((x) => x.id === typeId)!;
-    shifts.push({ id: `demo-${d}`, date: d, typeId, start: t.start, end: t.end, pause: t.pause, employerId: 'demo-emp' });
+    const t = byId.get(typeId)!;
+    shifts.push({ id: `demo-${d}`, date: d, typeId, start: t.start, end: t.end, pause: t.pause, employerId: EMP });
   }
 
   return {
-    version: 1,
-    shiftTypes: DEFAULT_TYPES.map((t) => ({ ...t })),
-    employers: [{ id: 'demo-emp', name: 'Atelier Nord', rate: 14.2, contractHours: 151.67 }],
+    version: 2,
+    shiftTypes: types,
+    employers: [{ id: EMP, name: 'Atelier Nord', rate: 14.2, contractHours: 151.67 }],
     shifts,
     settings: structuredClone(DEFAULT_SETTINGS),
     today: toISO(year, month, 15)

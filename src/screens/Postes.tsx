@@ -1,64 +1,235 @@
 import { useState } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { activeData, activeToday, update, useStore } from '../lib/store';
-import { newId } from '../lib/defaults';
+import { newId, WORK_TEMPLATES } from '../lib/defaults';
 import { addDays, dayOfWeek, mondayOf } from '../lib/dates';
 import { euro, fmt, hm, hours, longDate, parseDecimal, parseHM } from '../lib/format';
 import { SHIFT_COLORS, textOn, tint } from '../lib/colors';
 import { DateField, Icon, Sheet, Stepper, Switch, VStepper, toast } from '../components/ui';
 import type { AppData, Employer, Rates, Shift, ShiftKind, ShiftType } from '../lib/types';
 
+type Editing = { type: ShiftType | null; employerId: string | null };
+
 export function Postes() {
   const st = useStore();
   const data = activeData(st);
-  const [editing, setEditing] = useState<ShiftType | 'new' | null>(null);
-  const used = (typeId: string) => data.shifts.filter((s) => s.typeId === typeId).length;
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [editing, setEditing] = useState<Editing | null>(null);
+  const open = data.employers.find((e) => e.id === openId);
+
+  const addEmployer = () => {
+    const id = newId('emp');
+    update((d) => ({
+      ...d,
+      employers: [...d.employers, { id, name: `Employeur ${d.employers.length + 1}`, rate: d.employers[0]?.rate ?? 12, contractHours: 0 }]
+    }));
+    setOpenId(id);
+    window.scrollTo({ top: 0 });
+  };
 
   return (
     <div className="screen">
-      <div className="page-head">
-        <h1>Postes et taux</h1>
-        <p>Ces valeurs servent au calcul du brut et du net estimé.</p>
-      </div>
-
-      <div className="stack">
-        <section className="glass lg section">
-          <div className="section-head">
-            <h2>Types de postes</h2>
-            <button className="link-btn" onClick={() => setEditing('new')}>Ajouter</button>
+      {open ? (
+        <EmployerPage
+          key={open.id}
+          data={data}
+          employer={open}
+          today={activeToday(st)}
+          onBack={() => {
+            setOpenId(null);
+            window.scrollTo({ top: 0 });
+          }}
+          onEditType={(type) => setEditing({ type, employerId: open.id })}
+        />
+      ) : (
+        <>
+          <div className="page-head">
+            <h1>Postes et taux</h1>
+            <p>Chaque employeur a son taux, son contrat et ses postes.</p>
           </div>
-          {data.shiftTypes.map((t) => (
-            <div className="row" key={t.id}>
-              <span className="typebar" style={{ background: t.color }} />
-              <div className="t" style={{ flexGrow: 1 }}>
-                <div className="a">{t.name}</div>
-                <div className="b">
-                  {t.kind === 'work' ? `Pause ${t.pause} min` : t.kind === 'rest' ? 'Non travaillé' : `Congé payé · ${hours(t.leaveHours)} h`}
-                </div>
+          <div className="stack">
+            <section className="glass lg section">
+              <div className="section-head">
+                <h2>{data.employers.length > 1 ? 'Employeurs' : 'Employeur'}</h2>
+                <button className="link-btn" onClick={addEmployer}>Ajouter</button>
               </div>
-              <div className="num" style={{ fontSize: 13, color: 'var(--text-4)' }}>
-                {t.kind === 'work' ? `${hm(t.start)} – ${hm(t.end)}` : '—'}
-              </div>
-              <button className="icon-btn" style={{ marginRight: -10 }} aria-label={`Modifier le poste ${t.name}`} onClick={() => setEditing(t)}>
-                {Icon.pencil()}
-              </button>
-            </div>
-          ))}
-        </section>
+              {data.employers.map((e) => {
+                const types = data.shiftTypes.filter((t) => t.employerId === e.id);
+                return (
+                  <button key={e.id} className="row row-btn" onClick={() => { setOpenId(e.id); window.scrollTo({ top: 0 }); }} aria-label={`Ouvrir ${e.name}`}>
+                    <span className="dots" aria-hidden="true">
+                      {types.slice(0, 4).map((t) => <i key={t.id} style={{ background: t.color }} />)}
+                      {types.length === 0 && <i style={{ background: 'var(--field-border)' }} />}
+                    </span>
+                    <div className="t" style={{ flexGrow: 1 }}>
+                      <div className="a">{e.name}</div>
+                      <div className="b num-lite">
+                        {fmt(e.rate)} €/h · {e.contractHours > 0 ? `${hours(e.contractHours)} h/mois` : 'sans contrat'} · {types.length} poste{types.length > 1 ? 's' : ''}
+                      </div>
+                    </div>
+                    <ChevronRight size={18} className="muted" aria-hidden="true" />
+                  </button>
+                );
+              })}
+            </section>
 
-        <Employers data={data} />
-        <Majorations data={data} />
-        <Cotisations data={data} />
-        <Cycle data={data} today={activeToday(st)} />
-      </div>
+            <CommonTypes data={data} onEdit={(type) => setEditing({ type, employerId: null })} />
+            <Majorations data={data} />
+            <Cotisations data={data} />
+          </div>
+        </>
+      )}
 
       {editing && (
-        <TypeSheet type={editing === 'new' ? null : editing} usedBy={editing === 'new' ? 0 : used(editing.id)} canDelete={data.shiftTypes.length > 1} onClose={() => setEditing(null)} />
+        <TypeSheet
+          type={editing.type}
+          employerId={editing.employerId}
+          usedBy={editing.type ? data.shifts.filter((s) => s.typeId === editing.type!.id).length : 0}
+          onClose={() => setEditing(null)}
+        />
       )}
     </div>
   );
 }
 
-/* ---------- Champ numérique à la française (validé à la sortie du champ) ---------- */
+/* ---------- Page d'un employeur ---------- */
+
+function EmployerPage({ data, employer: e, today, onBack, onEditType }: {
+  data: AppData;
+  employer: Employer;
+  today: string;
+  onBack: () => void;
+  onEditType: (t: ShiftType | null) => void;
+}) {
+  const types = data.shiftTypes.filter((t) => t.employerId === e.id);
+  const patch = (p: Partial<Employer>) => update((d) => ({ ...d, employers: d.employers.map((x) => (x.id === e.id ? { ...x, ...p } : x)) }));
+  const usedDays = data.shifts.filter((s) => s.employerId === e.id).length;
+
+  const addTemplate = (key: string) => {
+    const tpl = WORK_TEMPLATES.find((t) => t.key === key)!;
+    const { key: _k, ...rest } = tpl;
+    update((d) => ({ ...d, shiftTypes: [...d.shiftTypes, { ...rest, id: newId('type'), employerId: e.id }] }));
+  };
+
+  const remove = () => {
+    if (usedDays > 0) {
+      toast(`Impossible : ${usedDays} jour${usedDays > 1 ? 's' : ''} du planning utilisent « ${e.name} »`);
+      return;
+    }
+    if (!window.confirm(`Supprimer « ${e.name} » et ses postes ?`)) return;
+    update((d) => ({
+      ...d,
+      employers: d.employers.filter((x) => x.id !== e.id),
+      shiftTypes: d.shiftTypes.filter((t) => t.employerId !== e.id)
+    }));
+    toast('Employeur supprimé');
+    onBack();
+  };
+
+  const missing = WORK_TEMPLATES.filter((tpl) => !types.some((t) => t.name === tpl.name));
+
+  return (
+    <>
+      <button className="back-btn" onClick={onBack}>
+        <ChevronLeft size={20} aria-hidden="true" /> Postes et taux
+      </button>
+      <div className="page-head" style={{ paddingTop: 4 }}>
+        <h1>{e.name}</h1>
+        <p>Taux, contrat et postes de cet employeur.</p>
+      </div>
+
+      <div className="stack">
+        <section className="glass lg section pb">
+          <div className="section-head"><h2>Employeur</h2></div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div className="field">
+              <label htmlFor="emp-nom">Nom</label>
+              <TextInput id="emp-nom" value={e.name} maxLength={60} onCommit={(name) => patch({ name })} />
+            </div>
+            <div className="grid2">
+              <div className="field">
+                <label htmlFor="emp-taux">Taux horaire brut (€/h)</label>
+                <DecimalInput id="emp-taux" value={e.rate} max={1000} onCommit={(rate) => patch({ rate })} />
+              </div>
+              <div className="field">
+                <label htmlFor="emp-h">Heures contrat / mois</label>
+                <DecimalInput id="emp-h" value={e.contractHours} max={744} onCommit={(contractHours) => patch({ contractHours })} />
+              </div>
+            </div>
+            <div className="hint">0 h de contrat (intérim sans volume fixe) : pas d'heures sup. calculées.</div>
+          </div>
+        </section>
+
+        <section className="glass lg section">
+          <div className="section-head">
+            <h2>Postes</h2>
+            <button className="link-btn" onClick={() => onEditType(null)}>Ajouter</button>
+          </div>
+          {types.map((t) => (
+            <div className="row" key={t.id}>
+              <span className="typebar" style={{ background: t.color }} />
+              <div className="t" style={{ flexGrow: 1 }}>
+                <div className="a">{t.name}</div>
+                <div className="b">Pause {t.pause} min</div>
+              </div>
+              <div className="num" style={{ fontSize: 13, color: 'var(--text-4)' }}>{hm(t.start)} – {hm(t.end)}</div>
+              <button className="icon-btn" style={{ marginRight: -10 }} aria-label={`Modifier le poste ${t.name}`} onClick={() => onEditType(t)}>
+                {Icon.pencil()}
+              </button>
+            </div>
+          ))}
+          {missing.length > 0 && (
+            <div className="quick">
+              <div className="hint">{types.length === 0 ? 'Aucun poste. Ajout rapide :' : 'Ajout rapide :'}</div>
+              <div className="quick-row">
+                {missing.map((tpl) => (
+                  <button key={tpl.key} className="chip" onClick={() => addTemplate(tpl.key)} aria-label={`Ajouter le poste ${tpl.name}, ${hm(tpl.start)} à ${hm(tpl.end)}`}>
+                    <i style={{ background: tpl.color }} /><span>+ {tpl.name}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </section>
+
+        {types.length > 0 && <Cycle data={data} employer={e} types={types} today={today} />}
+
+        {data.employers.length > 1 && (
+          <button className="btn-secondary btn-danger" onClick={remove}>Supprimer cet employeur</button>
+        )}
+      </div>
+    </>
+  );
+}
+
+/* ---------- Jours sans travail (communs à tous les employeurs) ---------- */
+
+function CommonTypes({ data, onEdit }: { data: AppData; onEdit: (t: ShiftType | null) => void }) {
+  const common = data.shiftTypes.filter((t) => t.employerId === null);
+  return (
+    <section className="glass lg section">
+      <div className="section-head">
+        <h2>Jours sans travail</h2>
+        <button className="link-btn" onClick={() => onEdit(null)}>Ajouter</button>
+      </div>
+      {common.map((t) => (
+        <div className="row" key={t.id}>
+          <span className="typebar" style={{ background: t.color }} />
+          <div className="t" style={{ flexGrow: 1 }}>
+            <div className="a">{t.name}</div>
+            <div className="b">{t.kind === 'leave' ? `Congé payé · ${hours(t.leaveHours)} h` : 'Non travaillé · 0 h'}</div>
+          </div>
+          <button className="icon-btn" style={{ marginRight: -10 }} aria-label={`Modifier ${t.name}`} onClick={() => onEdit(t)}>
+            {Icon.pencil()}
+          </button>
+        </div>
+      ))}
+      <div className="hint" style={{ padding: '2px 0 12px' }}>Communs à tous les employeurs.</div>
+    </section>
+  );
+}
+
+/* ---------- Champs à la française (validés à la sortie du champ) ---------- */
 
 function DecimalInput({ id, value, onCommit, digits = 2, max = 10000 }: { id: string; value: number; onCommit: (v: number) => void; digits?: number; max?: number }) {
   const [text, setText] = useState<string | null>(null);
@@ -101,59 +272,6 @@ function TextInput({ id, value, onCommit, maxLength = 40 }: { id: string; value:
       }}
       onKeyDown={(e) => e.key === 'Enter' && (e.target as HTMLInputElement).blur()}
     />
-  );
-}
-
-/* ---------- Employeurs ---------- */
-
-function Employers({ data }: { data: AppData }) {
-  const patch = (id: string, p: Partial<Employer>) =>
-    update((d) => ({ ...d, employers: d.employers.map((e) => (e.id === id ? { ...e, ...p } : e)) }));
-  const add = () => {
-    update((d) => ({ ...d, employers: [...d.employers, { id: newId('emp'), name: `Employeur ${d.employers.length + 1}`, rate: d.employers[0]?.rate ?? 12, contractHours: 151.67 }] }));
-    toast('Employeur ajouté');
-  };
-  const remove = (e: Employer) => {
-    if (data.shifts.some((s) => s.employerId === e.id)) {
-      toast(`Impossible : des postes utilisent « ${e.name} »`);
-      return;
-    }
-    update((d) => ({ ...d, employers: d.employers.filter((x) => x.id !== e.id) }));
-  };
-
-  return (
-    <section className="glass lg section pb">
-      <div className="section-head">
-        <h2>{data.employers.length > 1 ? 'Employeurs' : 'Employeur'}</h2>
-        <button className="link-btn" onClick={add}>Ajouter</button>
-      </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-        {data.employers.map((e, i) => (
-          <div key={e.id} style={{ display: 'flex', flexDirection: 'column', gap: 10, borderTop: i > 0 ? '1px solid var(--glass-border)' : undefined, paddingTop: i > 0 ? 14 : 0 }}>
-            <div className="field">
-              <label htmlFor={`emp-nom-${e.id}`}>Nom</label>
-              <TextInput id={`emp-nom-${e.id}`} value={e.name} maxLength={60} onCommit={(name) => patch(e.id, { name })} />
-            </div>
-            <div className="grid2">
-              <div className="field">
-                <label htmlFor={`emp-taux-${e.id}`}>Taux horaire brut (€/h)</label>
-                <DecimalInput id={`emp-taux-${e.id}`} value={e.rate} max={1000} onCommit={(rate) => patch(e.id, { rate })} />
-              </div>
-              <div className="field">
-                <label htmlFor={`emp-h-${e.id}`}>Heures contrat / mois</label>
-                <DecimalInput id={`emp-h-${e.id}`} value={e.contractHours} max={744} onCommit={(contractHours) => patch(e.id, { contractHours })} />
-              </div>
-            </div>
-            {data.employers.length > 1 && (
-              <button className="link-btn" style={{ color: 'var(--danger)', alignSelf: 'flex-start' }} onClick={() => remove(e)}>
-                Supprimer cet employeur
-              </button>
-            )}
-          </div>
-        ))}
-        <div className="hint">0 heure contractuelle = pas d'heures sup. calculées (intérim sans volume fixe).</div>
-      </div>
-    </section>
   );
 }
 
@@ -235,42 +353,44 @@ function Cotisations({ data }: { data: AppData }) {
   );
 }
 
-/* ---------- Générateur de cycle 2x8 ---------- */
+/* ---------- Générateur de cycle (2x8 ou rotation sur deux postes) ---------- */
 
-function Cycle({ data, today }: { data: AppData; today: string }) {
-  const work = data.shiftTypes.filter((t) => t.kind === 'work');
-  const matin = data.shiftTypes.find((t) => t.id === 'matin') ?? work[0];
-  const apres = data.shiftTypes.find((t) => t.id === 'apres') ?? work[1] ?? work[0];
-  const repos = data.shiftTypes.find((t) => t.kind === 'rest');
+function TypeChips({ types, value, onChange, label }: { types: ShiftType[]; value: string; onChange: (id: string) => void; label: string }) {
+  return (
+    <div className="quick-row" role="radiogroup" aria-label={label}>
+      {types.map((t) => {
+        const on = t.id === value;
+        return (
+          <button key={t.id} className="chip" role="radio" aria-checked={on} style={on ? { background: tint(t.color, 0.22), borderColor: t.color } : undefined} onClick={() => onChange(t.id)}>
+            <i style={{ background: t.color }} /><span>{t.name}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
 
+function Cycle({ data, employer, types, today }: { data: AppData; employer: Employer; types: ShiftType[]; today: string }) {
+  const repos = data.shiftTypes.find((t) => t.kind === 'rest' && t.employerId === null);
   const nextMonday = dayOfWeek(today) === 1 ? today : addDays(mondayOf(today), 7);
   const [start, setStart] = useState(nextMonday);
   const [weeks, setWeeks] = useState(4);
-  const [firstMorning, setFirstMorning] = useState(true);
+  const [week1, setWeek1] = useState(types[0].id);
+  const [week2, setWeek2] = useState((types[1] ?? types[0]).id);
   const [replace, setReplace] = useState(false);
-  const [employerId, setEmployerId] = useState(data.employers[0].id);
   const monday = mondayOf(start);
+  const find = (id: string) => types.find((t) => t.id === id) ?? types[0];
+  const order = [find(week1), find(week2)];
 
-  if (!matin || !apres) {
-    return (
-      <section className="glass lg section pb">
-        <div className="section-head"><h2>Cycle de rotation</h2></div>
-        <p className="text-block first">Il faut au moins un type de poste travaillé pour générer un cycle.</p>
-      </section>
-    );
-  }
-
-  const order = firstMorning ? [matin, apres] : [apres, matin];
   const typeFor = (i: number): ShiftType | undefined => (i % 7 >= 5 ? repos : order[Math.floor(i / 7) % 2]);
   const preview = Array.from({ length: 14 }, (_, i) => typeFor(i));
 
   const generate = () => {
-    const empId = data.employers.some((e) => e.id === employerId) ? employerId : data.employers[0].id;
     const created: Shift[] = [];
     for (let i = 0; i < weeks * 7; i++) {
       const t = typeFor(i);
       if (!t) continue;
-      created.push({ id: newId('poste'), date: addDays(monday, i), typeId: t.id, start: t.start, end: t.end, pause: t.pause, employerId: empId });
+      created.push({ id: newId('poste'), date: addDays(monday, i), typeId: t.id, start: t.start, end: t.end, pause: t.pause, employerId: employer.id });
     }
     let added = 0;
     update((d) => {
@@ -288,8 +408,8 @@ function Cycle({ data, today }: { data: AppData; today: string }) {
       <div className="section-head"><h2>Cycle de rotation</h2></div>
       <div className="row">
         <div className="t">
-          <div className="a">Planning 2x8 automatique</div>
-          <div className="b">1 semaine {matin.name.toLowerCase()}, 1 semaine {apres.name.toLowerCase()}{repos ? ', week-end en repos' : ''}</div>
+          <div className="a">Planning automatique</div>
+          <div className="b">Semaines alternées du lundi au vendredi{repos ? ', week-end en repos' : ''}</div>
         </div>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }} aria-label="Aperçu sur 14 jours">
@@ -304,42 +424,20 @@ function Cycle({ data, today }: { data: AppData; today: string }) {
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        {types.length > 1 && (
+          <>
+            <div className="field"><div className="flabel">Semaine 1</div><TypeChips types={types} value={week1} onChange={setWeek1} label="Poste de la semaine 1" /></div>
+            <div className="field"><div className="flabel">Semaine 2</div><TypeChips types={types} value={week2} onChange={setWeek2} label="Poste de la semaine 2" /></div>
+          </>
+        )}
         <div className="field">
           <div className="flabel">Début du cycle (lundi)</div>
           <DateField label="Début du cycle" value={monday} display={longDate(monday)} onChange={(v) => setStart(mondayOf(v))} />
         </div>
-        <div className="grid2">
-          <div className="field">
-            <div className="flabel">Durée</div>
-            <Stepper value={`${weeks} sem.`} label="nombre de semaines" onDec={() => setWeeks(Math.max(1, weeks - 1))} onInc={() => setWeeks(Math.min(52, weeks + 1))} decDisabled={weeks <= 1} incDisabled={weeks >= 52} />
-          </div>
-          <div className="field">
-            <div className="flabel" id="first-lbl">Première semaine</div>
-            <div role="radiogroup" aria-labelledby="first-lbl" style={{ display: 'flex', gap: 6 }}>
-              {[true, false].map((v) => {
-                const t = v ? matin : apres;
-                const on = firstMorning === v;
-                return (
-                  <button key={String(v)} className="chip" role="radio" aria-checked={on} aria-label={t.name} style={{ flex: 1, ...(on ? { background: tint(t.color, 0.22), borderColor: t.color } : {}) }} onClick={() => setFirstMorning(v)}>
-                    <i style={{ background: t.color }} /><span>{t.code}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+        <div className="row" style={{ minHeight: 52 }}>
+          <div className="t"><div className="a">Durée</div></div>
+          <Stepper value={`${weeks} sem.`} label="nombre de semaines" onDec={() => setWeeks(Math.max(1, weeks - 1))} onInc={() => setWeeks(Math.min(52, weeks + 1))} decDisabled={weeks <= 1} incDisabled={weeks >= 52} />
         </div>
-        {data.employers.length > 1 && (
-          <div className="field">
-            <label htmlFor="cycle-emp">Employeur</label>
-            <div className="select-wrap">
-              <span>{data.employers.find((e) => e.id === employerId)?.name ?? data.employers[0].name}</span>
-              <span className="right muted">{Icon.chevron()}</span>
-              <select id="cycle-emp" value={employerId} onChange={(e) => setEmployerId(e.target.value)}>
-                {data.employers.map((e) => <option key={e.id} value={e.id}>{e.name}</option>)}
-              </select>
-            </div>
-          </div>
-        )}
         <div className="row" style={{ minHeight: 52 }}>
           <div className="t">
             <div className="a">Remplacer les jours déjà remplis</div>
@@ -355,16 +453,21 @@ function Cycle({ data, today }: { data: AppData; today: string }) {
   );
 }
 
-/* ---------- Feuille d'édition d'un type de poste ---------- */
+/* ---------- Feuille d'édition d'un poste (d'un employeur) ou d'un jour sans travail ---------- */
 
-function TypeSheet({ type, usedBy, canDelete, onClose }: { type: ShiftType | null; usedBy: number; canDelete: boolean; onClose: () => void }) {
+function TypeSheet({ type, employerId, usedBy, onClose }: { type: ShiftType | null; employerId: string | null; usedBy: number; onClose: () => void }) {
+  const isWork = employerId !== null;
   const [t, setT] = useState<ShiftType>(
-    () => type ?? { id: newId('type'), name: '', code: '', color: SHIFT_COLORS[5], start: 540, end: 1020, pause: 30, kind: 'work', leaveHours: 7 }
+    () =>
+      type ??
+      (isWork
+        ? { id: newId('type'), name: '', code: '', color: SHIFT_COLORS[5], start: 540, end: 1020, pause: 30, kind: 'work', leaveHours: 0, employerId }
+        : { id: newId('type'), name: '', code: '', color: SHIFT_COLORS[6], start: 0, end: 0, pause: 0, kind: 'leave', leaveHours: 7, employerId: null })
   );
   const set = (p: Partial<ShiftType>) => setT((x) => ({ ...x, ...p }));
   const wrap = (m: number) => ((m % 1440) + 1440) % 1440;
   const valid = t.name.trim().length > 0 && t.code.trim().length > 0;
-  const KINDS: [ShiftKind, string][] = [['work', 'Travaillé'], ['rest', 'Repos'], ['leave', 'Congé']];
+  const KINDS: [ShiftKind, string][] = [['rest', 'Repos (0 h)'], ['leave', 'Congé payé']];
 
   const save = (close: () => void) => {
     const clean = { ...t, name: t.name.trim(), code: t.code.trim() };
@@ -372,27 +475,29 @@ function TypeSheet({ type, usedBy, canDelete, onClose }: { type: ShiftType | nul
       ...d,
       shiftTypes: type ? d.shiftTypes.map((x) => (x.id === clean.id ? clean : x)) : [...d.shiftTypes, clean]
     }));
-    toast(type ? 'Type de poste modifié' : 'Type de poste ajouté');
+    toast(type ? 'Modifié' : 'Ajouté');
     close();
   };
   const remove = (close: () => void) => {
     update((d) => ({ ...d, shiftTypes: d.shiftTypes.filter((x) => x.id !== t.id) }));
-    toast('Type de poste supprimé');
+    toast('Supprimé');
     close();
   };
 
+  const title = type ? `Modifier « ${type.name} »` : isWork ? 'Nouveau poste' : 'Nouveau jour sans travail';
+
   return (
-    <Sheet title={type ? `Modifier « ${type.name} »` : 'Nouveau type de poste'} onClose={onClose}>
+    <Sheet title={title} onClose={onClose}>
       {(close) => (
         <>
           <div className="grid2" style={{ gridTemplateColumns: '1fr 96px' }}>
             <div className="field">
               <label htmlFor="type-nom">Nom</label>
-              <input id="type-nom" className="input" maxLength={24} value={t.name} onChange={(e) => set({ name: e.target.value })} placeholder="Ex. Journée" />
+              <input id="type-nom" className="input" maxLength={24} value={t.name} onChange={(e) => set({ name: e.target.value })} placeholder={isWork ? 'Ex. Journée' : 'Ex. Arrêt maladie'} />
             </div>
             <div className="field">
               <label htmlFor="type-code">Lettre</label>
-              <input id="type-code" className="input num" maxLength={2} value={t.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} placeholder="J" style={{ textAlign: 'center' }} />
+              <input id="type-code" className="input num" maxLength={2} value={t.code} onChange={(e) => set({ code: e.target.value.toUpperCase() })} placeholder={isWork ? 'J' : 'AM'} style={{ textAlign: 'center' }} />
             </div>
           </div>
 
@@ -407,16 +512,18 @@ function TypeSheet({ type, usedBy, canDelete, onClose }: { type: ShiftType | nul
             </div>
           </div>
 
-          <div className="field">
-            <div className="flabel" id="kind-lbl">Nature</div>
-            <div className="grid3" role="radiogroup" aria-labelledby="kind-lbl">
-              {KINDS.map(([k, label]) => (
-                <button key={k} className="chip" role="radio" aria-checked={t.kind === k} style={t.kind === k ? { background: tint(t.color, 0.22), borderColor: t.color } : undefined} onClick={() => set({ kind: k })}>
-                  <span>{label}</span>
-                </button>
-              ))}
+          {!isWork && (
+            <div className="field">
+              <div className="flabel" id="kind-lbl">Nature</div>
+              <div className="grid2" role="radiogroup" aria-labelledby="kind-lbl">
+                {KINDS.map(([k, label]) => (
+                  <button key={k} className="chip" role="radio" aria-checked={t.kind === k} style={t.kind === k ? { background: tint(t.color, 0.22), borderColor: t.color } : undefined} onClick={() => set({ kind: k })}>
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {t.kind === 'work' && (
             <div className="field">
@@ -430,16 +537,15 @@ function TypeSheet({ type, usedBy, canDelete, onClose }: { type: ShiftType | nul
           )}
           {t.kind === 'leave' && (
             <div className="row" style={{ borderTop: 0 }}>
-              <div className="t"><div className="a">Heures payées</div><div className="b">Par jour de congé</div></div>
-              <Stepper value={`${hours(t.leaveHours)} h`} label="heures payées par jour de congé" onDec={() => set({ leaveHours: Math.max(0, t.leaveHours - 0.5) })} onInc={() => set({ leaveHours: Math.min(12, t.leaveHours + 0.5) })} />
+              <div className="t"><div className="a">Heures payées</div><div className="b">Par jour</div></div>
+              <Stepper value={`${hours(t.leaveHours)} h`} label="heures payées par jour" onDec={() => set({ leaveHours: Math.max(0, t.leaveHours - 0.5) })} onInc={() => set({ leaveHours: Math.min(12, t.leaveHours + 0.5) })} />
             </div>
           )}
-          {t.kind === 'rest' && <div className="hint">Un repos compte 0 heure et 0 €.</div>}
           {type && usedBy > 0 && <div className="hint">Utilisé par {usedBy} jour{usedBy > 1 ? 's' : ''} du planning. Les horaires déjà saisis ne changent pas.</div>}
 
           <div className="btn-row">
-            {type && canDelete && (
-              <button className="btn-secondary btn-danger" disabled={usedBy > 0} onClick={() => remove(close)} title={usedBy > 0 ? 'Type utilisé dans le planning' : undefined}>
+            {type && (
+              <button className="btn-secondary btn-danger" disabled={usedBy > 0} onClick={() => remove(close)} title={usedBy > 0 ? 'Utilisé dans le planning' : undefined}>
                 Supprimer
               </button>
             )}

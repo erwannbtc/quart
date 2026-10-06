@@ -8,19 +8,31 @@ export const DEFAULT_SETTINGS: PaySettings = {
   cotisations: 22
 };
 
-export const DEFAULT_TYPES: ShiftType[] = [
-  { id: 'matin', name: 'Matin', code: 'M', color: '#F5A623', start: 300, end: 780, pause: 30, kind: 'work', leaveHours: 0 },
-  { id: 'apres', name: 'Après-midi', code: 'A', color: '#4C8DFF', start: 780, end: 1260, pause: 30, kind: 'work', leaveHours: 0 },
-  { id: 'nuit', name: 'Nuit', code: 'N', color: '#9B6DFF', start: 1260, end: 300, pause: 30, kind: 'work', leaveHours: 0 },
-  { id: 'repos', name: 'Repos', code: '·', color: '#6E788A', start: 0, end: 0, pause: 0, kind: 'rest', leaveHours: 0 },
-  { id: 'conge', name: 'Congé', code: 'C', color: '#7FCFA5', start: 0, end: 0, pause: 0, kind: 'leave', leaveHours: 7 }
+type TypeTemplate = Omit<ShiftType, 'id' | 'employerId'> & { key: string };
+
+/** Postes travaillés proposés à la création d'un employeur. */
+export const WORK_TEMPLATES: TypeTemplate[] = [
+  { key: 'matin', name: 'Matin', code: 'M', color: '#F5A623', start: 300, end: 780, pause: 30, kind: 'work', leaveHours: 0 },
+  { key: 'apres', name: 'Après-midi', code: 'A', color: '#4C8DFF', start: 780, end: 1260, pause: 30, kind: 'work', leaveHours: 0 },
+  { key: 'nuit', name: 'Nuit', code: 'N', color: '#9B6DFF', start: 1260, end: 300, pause: 30, kind: 'work', leaveHours: 0 }
 ];
+
+/** Jours sans travail, communs à tous les employeurs. */
+export const COMMON_TYPES: ShiftType[] = [
+  { id: 'repos', name: 'Repos', code: '·', color: '#6E788A', start: 0, end: 0, pause: 0, kind: 'rest', leaveHours: 0, employerId: null },
+  { id: 'conge', name: 'Congé', code: 'C', color: '#7FCFA5', start: 0, end: 0, pause: 0, kind: 'leave', leaveHours: 7, employerId: null }
+];
+
+/** Postes de départ d'un employeur (ids prévisibles : `${employerId}-matin`…). */
+export function workTypesFor(employerId: string, keys = ['matin', 'apres', 'nuit']): ShiftType[] {
+  return WORK_TEMPLATES.filter((t) => keys.includes(t.key)).map(({ key, ...t }) => ({ ...t, id: `${employerId}-${key}`, employerId }));
+}
 
 /** Données de départ : générique, à compléter par l'utilisateur. */
 export function defaultData(): AppData {
   return {
-    version: 1,
-    shiftTypes: DEFAULT_TYPES.map((t) => ({ ...t })),
+    version: 2,
+    shiftTypes: [...workTypesFor('emp-1'), ...COMMON_TYPES.map((t) => ({ ...t }))],
     employers: [{ id: 'emp-1', name: 'Mon employeur', rate: 12, contractHours: 151.67 }],
     shifts: [],
     settings: structuredClone(DEFAULT_SETTINGS)

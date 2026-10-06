@@ -20,6 +20,15 @@
   --col: 480px;
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
+  /* Barre d'onglets (Verdex) : au plus près du bas, mord un peu sur la zone de l'indicateur d'accueil */
+  --tabbar-h: 56px;
+  --tabbar-bottom: max(10px, calc(var(--safe-b) - 14px));
+  --lg-tint: 0.44;
+  --lg-bright: 0.82;
+  --lg-rim: 0.11;
+  --lg-edge: 0.17;
+  --lg-shade: 0.16;
+  --lg-glare: 0.04;
   color-scheme: dark;
 }
 
@@ -34,6 +43,8 @@ body {
   overscroll-behavior-y: none;
 }
 button, input, select { font-family: inherit; color: inherit; }
+/* iPhone zoome automatiquement sur un champ dont le texte fait moins de 16 px : on reste à 16 px. */
+input, select, textarea { font-size: 16px; }
 button { cursor: pointer; }
 button:disabled { cursor: default; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -57,7 +68,7 @@ button:disabled { cursor: default; }
 .app {
   position: relative; z-index: 1; max-width: var(--col); margin: 0 auto; min-height: 100dvh;
   padding-top: var(--safe-t);
-  padding-bottom: calc(64px + 14px + 20px + var(--safe-b));
+  padding-bottom: calc(var(--tabbar-bottom) + var(--tabbar-h) + 28px);
 }
 .screen { animation: fadeIn 0.3s ease both; }
 
@@ -145,34 +156,83 @@ button:disabled { cursor: default; }
 .todaycard .t { font-size: 15px; font-weight: 600; }
 .todaycard .r { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-family: var(--mono); font-variant-numeric: tabular-nums; flex: none; }
 
-/* ---------- Barre de navigation ---------- */
-.nav {
-  position: fixed; z-index: 20; left: 0; right: 0; margin: 0 auto;
-  bottom: calc(14px + var(--safe-b)); width: calc(min(100vw, var(--col)) - 32px);
-  height: 64px; padding: 6px; border-radius: 32px; border: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.07);
-  -webkit-backdrop-filter: blur(30px) saturate(180%); backdrop-filter: blur(30px) saturate(180%);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), inset 0 -1px 0 rgba(255, 255, 255, 0.05), 0 14px 34px rgba(0, 0, 0, 0.6);
-  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px;
+/* ---------- Barre d'onglets (reprise de Verdex) ---------- */
+/*
+ * Imitation du Liquid Glass d'iOS 26 (le matériau natif n'est pas accessible aux web apps).
+ * Couches : verre fumé très saturé → reflet diagonal (::before) → liseré de lumière (::after)
+ * → lentille des bords (.lg-lens) → reflet sous le doigt (--lx/--ly).
+ */
+.tabbar {
+  position: fixed; left: 0; right: 0; z-index: 20; display: flex; justify-content: center;
+  padding: 0 16px; bottom: var(--tabbar-bottom); pointer-events: none;
+  transition: opacity 0.25s ease, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-.tab {
-  height: 50px; border-radius: 26px; border: 0; background: transparent; padding: 0;
-  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
-  font-size: 11px; font-weight: 400; color: var(--text-3);
+body.sheet-open .tabbar { opacity: 0; transform: translateY(24px); }
+body.sheet-open .tabbar * { pointer-events: none !important; }
+.tabbar-inner {
+  pointer-events: auto; display: flex; align-items: center; width: 100%; max-width: 420px;
+  height: var(--tabbar-h); border-radius: 9999px;
 }
-.tab[aria-current='page'] {
-  font-weight: 600; color: var(--accent);
-  background: radial-gradient(120% 90% at 30% 12%, rgba(255, 255, 255, 0.38), rgba(255, 255, 255, 0.10) 42%, rgba(255, 255, 255, 0.03) 72%);
-  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.65), inset 0 -8px 12px rgba(255, 255, 255, 0.08),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.16), 0 6px 18px rgba(0, 0, 0, 0.55);
-  animation: drop 0.7s cubic-bezier(0.3, 1.4, 0.5, 1) both;
+.tabbar-pill-slot { position: absolute; top: 5px; bottom: 5px; pointer-events: none; }
+.tabbar-pill-slot .lg-pill { display: block; width: 100%; height: 100%; border-radius: 9999px; }
+.tabbar-btn {
+  position: relative; flex: 1; height: 46px; display: flex; align-items: center; justify-content: center;
+  background: transparent; border: 0; padding: 0; color: inherit;
 }
-@keyframes drop {
-  0% { transform: scale(0.55, 0.7); opacity: 0; }
-  55% { transform: scale(1.1, 0.9); opacity: 1; }
-  75% { transform: scale(0.96, 1.05); }
-  100% { transform: scale(1, 1); }
+.tabbar-icon { color: rgba(255, 255, 255, 0.6); transition: color 0.2s ease; }
+.tabbar-icon.lit { color: var(--accent); filter: drop-shadow(0 0 8px rgba(43, 214, 123, 0.4)); }
+
+.liquid-glass {
+  position: relative;
+  isolation: isolate;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, calc(var(--lg-glare) * 1.25)) 0%, rgba(0, 0, 0, calc(var(--lg-shade) * 0.6)) 100%),
+    rgba(8, 8, 10, calc(var(--lg-tint) + 0.06));
+  -webkit-backdrop-filter: blur(10px) saturate(180%) brightness(calc(var(--lg-bright) - 0.1)) contrast(1.05);
+  backdrop-filter: blur(10px) saturate(180%) brightness(calc(var(--lg-bright) - 0.1)) contrast(1.05);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, calc(var(--lg-rim) * 1.8)),
+    inset 0 -10px 20px rgba(0, 0, 0, calc(var(--lg-shade) * 1.4)),
+    0 10px 30px rgba(0, 0, 0, 0.55),
+    0 2px 6px rgba(0, 0, 0, 0.3);
 }
+.liquid-glass::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  background:
+    radial-gradient(160px 90px at var(--lx, 50%) var(--ly, 0%), rgba(255, 255, 255, var(--lglow, 0)) 0%, transparent 70%),
+    linear-gradient(125deg, rgba(255, 255, 255, calc(var(--lg-glare) * 1.5)) 0%, transparent 34%, rgba(0, 0, 0, calc(var(--lg-shade) * 0.6)) 100%);
+  transition: --lglow 0.25s;
+}
+.liquid-glass::after {
+  content: ''; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, calc(var(--lg-edge) * 1.75)) 0%,
+    rgba(255, 255, 255, calc(var(--lg-edge) * 0.3)) 30%,
+    rgba(255, 255, 255, calc(var(--lg-edge) * 0.09)) 60%,
+    rgba(255, 255, 255, calc(var(--lg-edge) * 0.75)) 100%
+  );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+}
+/* Lentille des bords : flou/saturation plus forts uniquement sur le pourtour, comme la réfraction du verre */
+.lg-lens {
+  position: absolute; inset: 0; z-index: -1; border-radius: inherit; pointer-events: none;
+  -webkit-backdrop-filter: blur(3px) saturate(220%) brightness(var(--lg-bright));
+  backdrop-filter: blur(3px) saturate(220%) brightness(var(--lg-bright));
+  -webkit-mask-image: radial-gradient(closest-side, transparent 72%, #000 100%);
+  mask-image: radial-gradient(closest-side, transparent 72%, #000 100%);
+}
+/* Pastille de sélection : goutte de verre plus claire */
+.lg-pill {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.028) 100%);
+  box-shadow:
+    inset 0 1px 0.5px rgba(255, 255, 255, calc(var(--lg-rim) * 2.9)),
+    inset 0 -6px 12px rgba(0, 0, 0, calc(var(--lg-shade) * 1.1)),
+    0 4px 14px rgba(0, 0, 0, 0.38);
+}
+@property --lglow { syntax: '<number>'; initial-value: 0; inherits: false; }
 
 /* ---------- Écrans à cartes (Postes, Réglages) ---------- */
 .page-head { padding: 20px 16px 12px; display: flex; flex-direction: column; gap: 2px; }
@@ -200,7 +260,7 @@ ul.rules b { color: var(--text); font-weight: 500; }
 .field > label, .field > .flabel { font-size: 12px; color: var(--text-2); }
 .input, .select-wrap {
   height: 46px; width: 100%; background: var(--field); border: 1px solid var(--field-border); border-radius: 12px;
-  padding: 0 12px; color: var(--text); font-size: 15px;
+  padding: 0 12px; color: var(--text); font-size: 16px;
 }
 .input.num { font-family: var(--mono); }
 .input:focus, .select-wrap:focus-within { border-color: rgba(43, 214, 123, 0.7); outline: none; }
@@ -304,7 +364,7 @@ ul.rules b { color: var(--text); font-weight: 500; }
 
 /* ---------- Message éphémère ---------- */
 .toast {
-  position: fixed; z-index: 60; left: 50%; bottom: calc(92px + var(--safe-b)); transform: translateX(-50%);
+  position: fixed; z-index: 60; left: 50%; bottom: calc(var(--tabbar-bottom) + var(--tabbar-h) + 14px); transform: translateX(-50%);
   max-width: calc(min(100vw, var(--col)) - 32px); padding: 12px 16px; border-radius: 14px; font-size: 14px;
   background: rgba(30, 33, 40, 0.92); border: 1px solid var(--field-border); box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   animation: toastIn 0.3s cubic-bezier(0.2, 0.8, 0.2, 1) both; text-align: center;
@@ -313,7 +373,7 @@ ul.rules b { color: var(--text); font-weight: 500; }
 
 /* Pas de flou si l'appareil ne le gère pas : un fond plus opaque à la place. */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .glass, .nav { background: rgba(28, 31, 38, 0.92); }
+  .glass, .liquid-glass { background: rgba(28, 31, 38, 0.92); }
   .sheet { background: rgba(22, 24, 30, 0.97); }
 }
 
@@ -348,3 +408,16 @@ ul.rules b { color: var(--text); font-weight: 500; }
 /* Champs heure compacts (plage de nuit) */
 .time-input { width: 84px; padding: 0 6px; text-align: center; }
 .time-input::-webkit-calendar-picker-indicator { display: none; }
+
+/* Liste des employeurs (ligne entière cliquable) */
+.row-btn { width: 100%; background: transparent; border-left: 0; border-right: 0; border-bottom: 0; color: inherit; text-align: left; padding: 6px 0; }
+.row-btn:active { opacity: 0.7; }
+.dots { display: grid; grid-template-columns: repeat(2, 8px); gap: 3px; width: 19px; flex: none; }
+.dots i { width: 8px; height: 8px; border-radius: 3px; display: block; }
+.back-btn {
+  display: flex; align-items: center; gap: 2px; min-height: 44px; margin: 8px 0 0 8px; padding: 0 8px;
+  background: transparent; border: 0; color: var(--accent); font-size: 15px; font-weight: 500;
+}
+.quick { display: flex; flex-direction: column; gap: 8px; border-top: 1px solid var(--glass-border); padding: 12px 0 14px; }
+.quick-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.quick-row .chip { flex: 0 1 auto; padding: 0 12px; }
