@@ -222,7 +222,7 @@ function EmployerPage({ data, employer: e, today, onBack, onEditType }: {
           )}
         </section>
 
-        {types.length > 0 && <Cycle data={data} employer={e} types={types} today={today} />}
+        {types.length > 0 && <Cycle key={types.map((t) => t.id).join()} data={data} employer={e} types={types} today={today} />}
 
         {data.employers.length > 1 && (
           <button className="btn-secondary btn-danger" onClick={remove}>Supprimer cet employeur</button>
@@ -373,7 +373,7 @@ function Cotisations({ data }: { data: AppData }) {
   );
 }
 
-/* ---------- Générateur de cycle (2x8 ou rotation sur deux postes) ---------- */
+/* ---------- Générateur de cycle (2x8 ou 3x8) ---------- */
 
 function TypeChips({ types, value, onChange, label }: { types: ShiftType[]; value: string; onChange: (id: string) => void; label: string }) {
   return (
@@ -390,27 +390,43 @@ function TypeChips({ types, value, onChange, label }: { types: ShiftType[]; valu
   );
 }
 
+const CYCLES = [
+  { n: 2, label: '2x8', hint: '1 semaine matin, 1 semaine après-midi' },
+  { n: 3, label: '3x8', hint: '1 semaine matin, 1 après-midi, 1 nuit' }
+];
+
+/** Postes proposés par défaut pour chaque semaine : Matin, Après-midi, Nuit si l'employeur les a. */
+function defaultRotation(types: ShiftType[]): string[] {
+  const byName = (re: RegExp) => types.find((t) => re.test(t.name));
+  const picks = [byName(/^matin/i), byName(/apr[eè]s/i), byName(/^nuit/i)];
+  return picks.map((t, i) => (t ?? types[i] ?? types[0]).id);
+}
+
 function Cycle({ data, employer, types, today }: { data: AppData; employer: Employer; types: ShiftType[]; today: string }) {
   const repos = data.shiftTypes.find((t) => t.kind === 'rest' && t.employerId === null);
   const nextMonday = dayOfWeek(today) === 1 ? today : addDays(mondayOf(today), 7);
+  const [kind, setKind] = useState(types.length >= 3 ? 3 : 2);
+  const [rotation, setRotation] = useState(() => defaultRotation(types));
   const [start, setStart] = useState(nextMonday);
-  const [weeks, setWeeks] = useState(4);
-  const [week1, setWeek1] = useState(types[0].id);
-  const [week2, setWeek2] = useState((types[1] ?? types[0]).id);
+  const [weeks, setWeeks] = useState(6);
+  const [weekendOff, setWeekendOff] = useState(true);
   const [replace, setReplace] = useState(false);
-  const monday = mondayOf(start);
-  const find = (id: string) => types.find((t) => t.id === id) ?? types[0];
-  const order = [find(week1), find(week2)];
 
-  const typeFor = (i: number): ShiftType | undefined => (i % 7 >= 5 ? repos : order[Math.floor(i / 7) % 2]);
-  const preview = Array.from({ length: 14 }, (_, i) => typeFor(i));
+  const find = (id: string) => types.find((t) => t.id === id) ?? types[0];
+  const order = rotation.slice(0, kind).map(find);
+  // Les semaines tournent du lundi au dimanche ; le cycle commence à la date choisie.
+  const monday = mondayOf(start);
+  const end = addDays(monday, weeks * 7 - 1);
+  const typeFor = (i: number): ShiftType | undefined => (weekendOff && i % 7 >= 5 ? repos : order[Math.floor(i / 7) % kind]);
+  const preview = Array.from({ length: kind * 7 }, (_, i) => typeFor(i));
 
   const generate = () => {
     const created: Shift[] = [];
     for (let i = 0; i < weeks * 7; i++) {
+      const date = addDays(monday, i);
       const t = typeFor(i);
-      if (!t) continue;
-      created.push({ id: newId('poste'), date: addDays(monday, i), typeId: t.id, start: t.start, end: t.end, pause: t.pause, employerId: employer.id });
+      if (!t || date < start) continue;
+      created.push({ id: newId('poste'), date, typeId: t.id, start: t.start, end: t.end, pause: t.pause, employerId: employer.id });
     }
     let added = 0;
     update((d) => {
@@ -423,16 +439,28 @@ function Cycle({ data, employer, types, today }: { data: AppData; employer: Empl
     toast(added > 0 ? `${added} jours ajoutés au planning` : 'Aucun jour libre sur cette période');
   };
 
+  const setWeek = (i: number, id: string) => setRotation((r) => r.map((x, j) => (j === i ? id : x)));
+  const WEEK_NAMES = ['Semaine 1', 'Semaine 2', 'Semaine 3'];
+
   return (
     <section className="glass lg section pb">
       <div className="section-head"><h2>Cycle de rotation</h2></div>
-      <div className="row">
-        <div className="t">
-          <div className="a">Planning automatique</div>
-          <div className="b">Semaines alternées du lundi au vendredi{repos ? ', week-end en repos' : ''}</div>
+
+      <div className="field" style={{ borderTop: '1px solid var(--glass-border)', paddingTop: 12, marginBottom: 12 }}>
+        <div className="flabel" id="cycle-kind">Type de cycle</div>
+        <div className="grid2" role="radiogroup" aria-labelledby="cycle-kind">
+          {CYCLES.map((c) => (
+            <button key={c.n} className="chip" role="radio" aria-checked={kind === c.n} onClick={() => setKind(c.n)}
+              style={kind === c.n ? { background: 'rgba(43,214,123,0.16)', borderColor: 'var(--accent)' } : undefined}>
+              <span className="num">{c.label}</span>
+            </button>
+          ))}
         </div>
+        <div className="hint">{CYCLES.find((c) => c.n === kind)!.hint}{weekendOff ? ', week-end en repos.' : ', week-end compris.'}</div>
+        {kind === 3 && types.length < 3 && <div className="hint warn">Cet employeur a moins de 3 postes : ajoutez un poste Nuit (plus haut) pour un vrai 3x8.</div>}
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }} aria-label="Aperçu sur 14 jours">
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }} aria-label={`Aperçu sur ${kind * 7} jours`}>
         <div className="grid7 dow-mini" aria-hidden="true">{['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => <div key={i}>{d}</div>)}</div>
         <div className="grid7">
           {preview.map((t, i) => (
@@ -444,19 +472,24 @@ function Cycle({ data, employer, types, today }: { data: AppData; employer: Empl
       </div>
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {types.length > 1 && (
-          <>
-            <div className="field"><div className="flabel">Semaine 1</div><TypeChips types={types} value={week1} onChange={setWeek1} label="Poste de la semaine 1" /></div>
-            <div className="field"><div className="flabel">Semaine 2</div><TypeChips types={types} value={week2} onChange={setWeek2} label="Poste de la semaine 2" /></div>
-          </>
-        )}
+        {types.length > 1 &&
+          order.map((_, i) => (
+            <div className="field" key={i}>
+              <div className="flabel">{WEEK_NAMES[i]}</div>
+              <TypeChips types={types} value={rotation[i]} onChange={(id) => setWeek(i, id)} label={`Poste de la ${WEEK_NAMES[i].toLowerCase()}`} />
+            </div>
+          ))}
         <div className="field">
-          <div className="flabel">Début du cycle (lundi)</div>
-          <DateField label="Début du cycle" value={monday} display={longDate(monday)} onChange={(v) => setStart(mondayOf(v))} />
+          <div className="flabel">Date de début</div>
+          <DateField label="Date de début du cycle" value={start} display={longDate(start)} onChange={setStart} />
         </div>
         <div className="row" style={{ minHeight: 52 }}>
-          <div className="t"><div className="a">Durée</div></div>
+          <div className="t"><div className="a">Durée</div><div className="b">Jusqu'au {longDate(end).toLowerCase()}</div></div>
           <Stepper value={`${weeks} sem.`} label="nombre de semaines" onDec={() => setWeeks(Math.max(1, weeks - 1))} onInc={() => setWeeks(Math.min(52, weeks + 1))} decDisabled={weeks <= 1} incDisabled={weeks >= 52} />
+        </div>
+        <div className="row" style={{ minHeight: 52 }}>
+          <div className="t"><div className="a">Repos le week-end</div><div className="b">Samedi et dimanche en repos</div></div>
+          <Switch checked={weekendOff} onChange={setWeekendOff} label="Repos le week-end" />
         </div>
         <div className="row" style={{ minHeight: 52 }}>
           <div className="t">
@@ -465,9 +498,7 @@ function Cycle({ data, employer, types, today }: { data: AppData; employer: Empl
           </div>
           <Switch checked={replace} onChange={setReplace} label="Remplacer les jours déjà remplis" />
         </div>
-        <button className="btn-secondary" onClick={generate}>
-          Générer {weeks} semaine{weeks > 1 ? 's' : ''} à partir du {longDate(monday).replace(/^Lundi /, '')}
-        </button>
+        <button className="btn-primary" onClick={generate}>Générer le {CYCLES.find((c) => c.n === kind)!.label}</button>
       </div>
     </section>
   );

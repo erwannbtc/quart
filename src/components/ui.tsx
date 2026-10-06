@@ -196,27 +196,33 @@ export function Switch({ checked, onChange, label }: { checked: boolean; onChang
   );
 }
 
-/* ---------- Champ date : bouton stylé qui ouvre le sélecteur natif ---------- */
+/* ---------- Champ date : bouton stylé, avec le vrai sélecteur natif posé dessus ---------- */
 
+/**
+ * Le vrai <input type="date"> est invisible mais placé au-dessus du bouton : un
+ * toucher sur iPhone/Android ouvre directement le calendrier natif (iOS refuse
+ * d'ouvrir un champ caché). Sur ordinateur, showPicker() ouvre le calendrier.
+ */
 export function DateField({ value, onChange, label, display }: { value: string; onChange: (v: string) => void; label: string; display: string }) {
-  const ref = useRef<HTMLInputElement>(null);
-  const open = () => {
-    const el = ref.current;
-    if (!el) return;
-    try {
-      el.showPicker();
-    } catch {
-      el.focus();
-      el.click();
-    }
-  };
   return (
     <div className="picker">
-      <button type="button" className="fieldbtn" onClick={open} aria-label={`${label} : ${display}. Modifier`}>
+      <div className="fieldbtn" aria-hidden="true">
         <span>{display}</span>
         <span className="muted">{Icon.calendar(18)}</span>
-      </button>
-      <input ref={ref} type="date" tabIndex={-1} aria-hidden="true" value={value} onChange={(e) => e.target.value && onChange(e.target.value)} />
+      </div>
+      <input
+        type="date"
+        aria-label={`${label} : ${display}`}
+        value={value}
+        onClick={(e) => {
+          try {
+            e.currentTarget.showPicker();
+          } catch {
+            /* le navigateur ouvre son propre sélecteur */
+          }
+        }}
+        onChange={(e) => e.target.value && onChange(e.target.value)}
+      />
     </div>
   );
 }
