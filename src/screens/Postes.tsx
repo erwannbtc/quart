@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { activeData, activeToday, update, useStore } from '../lib/store';
-import { newId, WORK_TEMPLATES } from '../lib/defaults';
+import { newEmployer, newId, WORK_TEMPLATES } from '../lib/defaults';
 import { addDays, dayOfWeek, mondayOf } from '../lib/dates';
 import { euro, fmt, hm, hours, longDate, parseDecimal, parseHM } from '../lib/format';
 import { SHIFT_COLORS, textOn, tint } from '../lib/colors';
-import { DateField, Icon, Sheet, Stepper, Switch, VStepper, toast } from '../components/ui';
+import { DateField, Icon, Sheet, Stepper, Switch, TimeStepper, VStepper, toast } from '../components/ui';
 import type { AppData, Employer, Rates, Shift, ShiftKind, ShiftType } from '../lib/types';
 
 type Editing = { type: ShiftType | null; employerId: string | null };
@@ -21,7 +21,7 @@ export function Postes() {
     const id = newId('emp');
     update((d) => ({
       ...d,
-      employers: [...d.employers, { id, name: `Employeur ${d.employers.length + 1}`, rate: d.employers[0]?.rate ?? 12, contractHours: 0 }]
+      employers: [...d.employers, newEmployer(id, `Employeur ${d.employers.length + 1}`, d.employers[0]?.rate ?? 12, 0)]
     }));
     setOpenId(id);
     window.scrollTo({ top: 0 });
@@ -161,6 +161,36 @@ function EmployerPage({ data, employer: e, today, onBack, onEditType }: {
         </section>
 
         <section className="glass lg section">
+          <div className="section-head"><h2>Majoration de nuit</h2></div>
+          <div className="row">
+            <div className="t">
+              <div className="a">Travail de nuit</div>
+              <div className="b">{e.nightRate > 0 ? `Heures entre ${hm(e.nightStart)} et ${hm(e.nightEnd)}` : 'Aucune majoration de nuit'}</div>
+            </div>
+            <Stepper
+              value={`+${e.nightRate} %`}
+              label="majoration de nuit"
+              onDec={() => patch({ nightRate: Math.max(0, e.nightRate - 5) })}
+              onInc={() => patch({ nightRate: Math.min(200, e.nightRate + 5) })}
+              decDisabled={e.nightRate <= 0}
+              incDisabled={e.nightRate >= 200}
+            />
+          </div>
+          <div className="row">
+            <div className="t">
+              <div className="a">Plage de nuit</div>
+              <div className="b">Début et fin</div>
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              <input aria-label="Début de la plage de nuit" className="input num time-input" type="time" step={60} value={hm(e.nightStart)}
+                onChange={(ev) => { const v = parseHM(ev.target.value); if (v !== null) patch({ nightStart: v }); }} />
+              <input aria-label="Fin de la plage de nuit" className="input num time-input" type="time" step={60} value={hm(e.nightEnd)}
+                onChange={(ev) => { const v = parseHM(ev.target.value); if (v !== null) patch({ nightEnd: v }); }} />
+            </div>
+          </div>
+        </section>
+
+        <section className="glass lg section">
           <div className="section-head">
             <h2>Postes</h2>
             <button className="link-btn" onClick={() => onEditType(null)}>Ajouter</button>
@@ -287,7 +317,6 @@ function Majorations({ data }: { data: AppData }) {
   const defs: [keyof Rates, string, string][] = [
     ['sup1', 'Heures sup. (palier 1)', `Les ${hours(s.sup1Hours)} premières h au-delà du contrat`],
     ['sup2', 'Heures sup. (palier 2)', 'Les heures sup. suivantes'],
-    ['night', 'Travail de nuit', `Heures entre ${hm(s.nightStart)} et ${hm(s.nightEnd)}`],
     ['sunday', 'Dimanche', 'Postes qui commencent un dimanche'],
     ['holiday', 'Jours fériés', 'Postes qui commencent un jour férié']
   ];
@@ -313,17 +342,8 @@ function Majorations({ data }: { data: AppData }) {
           <DecimalInput id="sup1h" value={s.sup1Hours} max={744} onCommit={(sup1Hours) => setS({ sup1Hours })} />
         </div>
       </div>
-      <div className="row">
-        <div className="t">
-          <div className="a">Plage de nuit</div>
-          <div className="b">Début et fin</div>
-        </div>
-        <div style={{ display: 'flex', gap: 6 }}>
-          <input aria-label="Début de la plage de nuit" className="input num time-input" type="time" step={900} value={hm(s.nightStart)}
-            onChange={(e) => { const v = parseHM(e.target.value); if (v !== null) setS({ nightStart: v }); }} />
-          <input aria-label="Fin de la plage de nuit" className="input num time-input" type="time" step={900} value={hm(s.nightEnd)}
-            onChange={(e) => { const v = parseHM(e.target.value); if (v !== null) setS({ nightEnd: v }); }} />
-        </div>
+      <div className="hint" style={{ padding: '2px 0 12px', borderTop: '1px solid var(--glass-border)', paddingTop: 10 }}>
+        La majoration de nuit se règle dans chaque employeur.
       </div>
     </section>
   );
@@ -465,7 +485,6 @@ function TypeSheet({ type, employerId, usedBy, onClose }: { type: ShiftType | nu
         : { id: newId('type'), name: '', code: '', color: SHIFT_COLORS[6], start: 0, end: 0, pause: 0, kind: 'leave', leaveHours: 7, employerId: null })
   );
   const set = (p: Partial<ShiftType>) => setT((x) => ({ ...x, ...p }));
-  const wrap = (m: number) => ((m % 1440) + 1440) % 1440;
   const valid = t.name.trim().length > 0 && t.code.trim().length > 0;
   const KINDS: [ShiftKind, string][] = [['rest', 'Repos (0 h)'], ['leave', 'Congé payé']];
 
@@ -529,8 +548,8 @@ function TypeSheet({ type, employerId, usedBy, onClose }: { type: ShiftType | nu
             <div className="field">
               <div className="flabel">Horaires par défaut</div>
               <div className="grid3">
-                <VStepper label="Début" value={hm(t.start)} onDec={() => set({ start: wrap(t.start - 15) })} onInc={() => set({ start: wrap(t.start + 15) })} decLabel="Début, 15 minutes plus tôt" incLabel="Début, 15 minutes plus tard" />
-                <VStepper label="Fin" value={hm(t.end)} onDec={() => set({ end: wrap(t.end - 15) })} onInc={() => set({ end: wrap(t.end + 15) })} decLabel="Fin, 15 minutes plus tôt" incLabel="Fin, 15 minutes plus tard" />
+                <TimeStepper label="Début" value={t.start} onChange={(start) => set({ start })} />
+                <TimeStepper label="Fin" value={t.end} onChange={(end) => set({ end })} />
                 <VStepper label="Pause" value={`${t.pause} min`} onDec={() => set({ pause: Math.max(0, t.pause - 5) })} onInc={() => set({ pause: Math.min(180, t.pause + 5) })} decLabel="Pause, 5 minutes de moins" incLabel="Pause, 5 minutes de plus" />
               </div>
             </div>

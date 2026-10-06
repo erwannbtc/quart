@@ -2,12 +2,10 @@ import { useMemo, useState } from 'react';
 import { activeData, update, useStore } from '../lib/store';
 import { holidayName, isSunday, shiftPay } from '../lib/pay';
 import { newId } from '../lib/defaults';
-import { duration, euro, fmt, hm, hours, longDate } from '../lib/format';
+import { duration, euro, fmt, hours, longDate } from '../lib/format';
 import { tint } from '../lib/colors';
-import { DateField, Icon, Sheet, VStepper, toast } from '../components/ui';
+import { DateField, Icon, Sheet, TimeStepper, VStepper, toast } from '../components/ui';
 import type { Shift } from '../lib/types';
-
-const wrap = (m: number) => ((m % 1440) + 1440) % 1440;
 
 export function ShiftSheet({ date, onClose, onSaved }: { date: string; onClose: () => void; onSaved: (date: string) => void }) {
   const st = useStore();
@@ -71,7 +69,7 @@ export function ShiftSheet({ date, onClose, onSaved }: { date: string; onClose: 
   const notes: string[] = [];
   if (worked && ferie) notes.push(`${ferie} : +${r.holiday} %`);
   else if (worked && isSunday(form.date)) notes.push(`Dimanche : +${r.sunday} %`);
-  if (worked && pay.nightHours > 0.001) notes.push(`dont ${duration(pay.nightHours)} de nuit (+${r.night} %)`);
+  if (worked && pay.nightHours > 0.001) notes.push(`dont ${duration(pay.nightHours)} de nuit (+${employer.nightRate} %)`);
 
   return (
     <Sheet title={existing ? 'Modifier le poste' : 'Ajouter un poste'} onClose={onClose}>
@@ -121,12 +119,8 @@ export function ShiftSheet({ date, onClose, onSaved }: { date: string; onClose: 
           <div className={`field ${worked ? 'undim' : 'dim'}`} aria-disabled={!worked}>
             <div className="flabel">Horaires</div>
             <div className="grid3">
-              <VStepper label="Début" value={worked ? hm(form.start) : '--:--'} disabled={!worked}
-                onDec={() => set({ start: wrap(form.start - 15) })} onInc={() => set({ start: wrap(form.start + 15) })}
-                decLabel="Début, 15 minutes plus tôt" incLabel="Début, 15 minutes plus tard" />
-              <VStepper label="Fin" value={worked ? hm(form.end) : '--:--'} disabled={!worked}
-                onDec={() => set({ end: wrap(form.end - 15) })} onInc={() => set({ end: wrap(form.end + 15) })}
-                decLabel="Fin, 15 minutes plus tôt" incLabel="Fin, 15 minutes plus tard" />
+              <TimeStepper label="Début" value={form.start} disabled={!worked} onChange={(start) => set({ start })} />
+              <TimeStepper label="Fin" value={form.end} disabled={!worked} onChange={(end) => set({ end })} />
               <VStepper label="Pause" value={worked ? `${form.pause} min` : '--'} disabled={!worked}
                 onDec={() => set({ pause: Math.max(0, form.pause - 5) })} onInc={() => set({ pause: Math.min(180, form.pause + 5) })}
                 decLabel="Pause, 5 minutes de moins" incLabel="Pause, 5 minutes de plus" />

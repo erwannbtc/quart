@@ -26,6 +26,11 @@ export interface Employer {
   rate: number;
   /** Heures contractuelles par mois. */
   contractHours: number;
+  /** Majoration de nuit propre à cet employeur, en % (20 = +20 %). */
+  nightRate: number;
+  /** Plage de nuit de cet employeur, en minutes depuis minuit. */
+  nightStart: number;
+  nightEnd: number;
 }
 
 export interface Shift {
@@ -43,7 +48,6 @@ export interface Shift {
 export interface Rates {
   sup1: number;
   sup2: number;
-  night: number;
   sunday: number;
   holiday: number;
 }
@@ -52,9 +56,6 @@ export interface PaySettings {
   rates: Rates;
   /** Nombre d'heures sup. payées au palier 1 chaque mois, avant le palier 2. */
   sup1Hours: number;
-  /** Plage de nuit, en minutes depuis minuit. */
-  nightStart: number;
-  nightEnd: number;
   /** Taux de cotisations salariales, en pourcentage. */
   cotisations: number;
 }

@@ -9,14 +9,14 @@ import {
   shiftPay,
   spanMinutes
 } from './pay';
-import { COMMON_TYPES, defaultData, DEFAULT_SETTINGS, workTypesFor } from './defaults';
+import { COMMON_TYPES, defaultData, DEFAULT_NIGHT, DEFAULT_SETTINGS, workTypesFor } from './defaults';
 import { validateData } from './validate';
 import { buildDemo } from './demo';
 import type { AppData, Employer, Shift } from './types';
 
 const TYPES = [...workTypesFor('e'), ...COMMON_TYPES];
 const type = (key: string) => TYPES.find((t) => t.id === key || t.id === `e-${key}`)!;
-const emp: Employer = { id: 'e', name: 'Test', rate: 14.2, contractHours: 151.67 };
+const emp: Employer = { id: 'e', name: 'Test', rate: 14.2, contractHours: 151.67, ...DEFAULT_NIGHT };
 const S = DEFAULT_SETTINGS;
 
 function shift(date: string, typeId: string, over: Partial<Shift> = {}): Shift {
@@ -94,6 +94,22 @@ describe('majorations', () => {
     expect(p.brut).toBeCloseTo(7.5 * 14.2 * 2, 6);
   });
 
+  it('majoration de nuit propre à l’employeur (taux et plage)', () => {
+    // Agence : +25 % entre 22:00 et 05:00 → un poste 21:00–05:00 a 7 h de nuit sur 8
+    const agence: Employer = { ...emp, id: 'g', nightRate: 25, nightStart: 1320, nightEnd: 300 };
+    const p = shiftPay(shift('2026-10-06', 'nuit', { employerId: 'g' }), type('nuit'), agence, S);
+    expect(p.nightHours).toBeCloseTo(7.5 * (7 / 8), 6);
+    expect(p.brut).toBeCloseTo(7.5 * 14.2 + 7.5 * (7 / 8) * 14.2 * 0.25, 6);
+    // Le même poste chez l'employeur par défaut (+20 %, 21:00–06:00)
+    expect(shiftPay(shift('2026-10-06', 'nuit'), type('nuit'), emp, S).brut).toBeCloseTo(7.5 * 14.2 * 1.2, 6);
+  });
+
+  it('employeur sans majoration de nuit (0 %)', () => {
+    const p = shiftPay(shift('2026-10-06', 'nuit'), type('nuit'), { ...emp, nightRate: 0 }, S);
+    expect(p.nightHours).toBe(0);
+    expect(p.brut).toBeCloseTo(7.5 * 14.2, 6);
+  });
+
   it('congé : pas de majoration de jour ni de nuit', () => {
     const p = shiftPay(shift('2026-12-25', 'conge'), type('conge'), emp, S);
     expect(p.day).toBeNull();
@@ -147,14 +163,14 @@ describe('heures supplémentaires', () => {
   });
 
   it('employeur sans heures contractuelles : pas d’heures sup.', () => {
-    const interim: Employer = { id: 'i', name: 'Intérim', rate: 12, contractHours: 0 };
+    const interim: Employer = { id: 'i', name: 'Intérim', rate: 12, contractHours: 0, ...DEFAULT_NIGHT };
     const m = computeMonth(data([shift('2026-10-05', 'apres', { employerId: 'i' })], [interim]), 2026, 10, '2026-10-31');
     expect(m.supHours).toBe(0);
     expect(m.brutPlanned).toBeCloseTo(7.5 * 12, 6);
   });
 
   it('heures sup. calculées par employeur', () => {
-    const other: Employer = { id: 'f', name: 'Autre', rate: 10, contractHours: 7.5 };
+    const other: Employer = { id: 'f', name: 'Autre', rate: 10, contractHours: 7.5, ...DEFAULT_NIGHT };
     const shifts = [shift('2026-10-05', 'apres', { employerId: 'f' }), shift('2026-10-06', 'apres', { employerId: 'f' })];
     const m = computeMonth(data(shifts, [emp, other]), 2026, 10, '2026-10-31');
     expect(m.supHours).toBeCloseTo(7.5);
@@ -252,6 +268,16 @@ describe('sauvegardes', () => {
     expect(copy.name).toBe('Matin');
     expect(d.shifts.find((s) => s.id === 's2')!.typeId).toBe(copy.id);
     expect(d.shifts.find((s) => s.id === 's3')!.typeId).toBe('repos');
+  });
+
+  it('l’ancienne majoration de nuit commune devient celle de chaque employeur', () => {
+    const old = {
+      ...defaultData(),
+      employers: [{ id: 'emp-1', name: 'A', rate: 12, contractHours: 151.67 }],
+      settings: { rates: { sup1: 25, sup2: 50, night: 30, sunday: 50, holiday: 100 }, sup1Hours: 34.67, nightStart: 1320, nightEnd: 360, cotisations: 22 }
+    };
+    const d = validateData(old)!;
+    expect(d.employers[0]).toMatchObject({ nightRate: 30, nightStart: 1320, nightEnd: 360 });
   });
 
   it('refuse un fichier étranger', () => {

@@ -150,6 +150,44 @@ export function VStepper({ label, value, onDec, onInc, decLabel, incLabel, disab
   );
 }
 
+/**
+ * Heure réglable à la minute près : on touche l'heure pour la saisir (roue native
+ * sur téléphone), ou on ajuste par pas de 5 minutes avec − et +.
+ */
+export function TimeStepper({ label, value, onChange, disabled }: {
+  label: string;
+  value: number;
+  onChange: (minutes: number) => void;
+  disabled?: boolean;
+}) {
+  const wrap = (m: number) => ((m % 1440) + 1440) % 1440;
+  const text = `${String(Math.floor(value / 60)).padStart(2, '0')}:${String(value % 60).padStart(2, '0')}`;
+  return (
+    <div className="vstep">
+      <div className="k">{label}</div>
+      {disabled ? (
+        <div className="v">--:--</div>
+      ) : (
+        <input
+          className="vtime"
+          type="time"
+          step={60}
+          aria-label={`${label} (heure exacte)`}
+          value={text}
+          onChange={(e) => {
+            const m = /^(\d{2}):(\d{2})/.exec(e.target.value);
+            if (m) onChange(Number(m[1]) * 60 + Number(m[2]));
+          }}
+        />
+      )}
+      <div className="b">
+        <button onClick={() => onChange(wrap(value - 5))} aria-label={`${label}, 5 minutes plus tôt`} disabled={disabled}>−</button>
+        <button onClick={() => onChange(wrap(value + 5))} aria-label={`${label}, 5 minutes plus tard`} disabled={disabled}>+</button>
+      </div>
+    </div>
+  );
+}
+
 export function Switch({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
     <button className="switch" role="switch" aria-checked={checked} aria-label={label} onClick={() => onChange(!checked)}>

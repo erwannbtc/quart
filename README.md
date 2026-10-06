@@ -66,8 +66,8 @@ du navigateur les efface : exportez régulièrement.
 - Durée payée = fin − début − pause (un poste de nuit qui passe minuit compte en entier).
 - Un poste est rattaché au **jour où il commence** pour le dimanche et les jours fériés.
 - Dimanche et férié le même jour : seule la majoration « férié » s'applique.
-- Nuit : seules les heures dans la plage de nuit (21:00–06:00 par défaut) sont
-  majorées ; la pause est répartie au prorata.
+- Nuit : taux et plage propres à chaque employeur (+20 %, 21:00–06:00 par défaut) ;
+  seules les heures dans la plage sont majorées, la pause est répartie au prorata.
 - Heures sup. : au-delà des heures du contrat, par mois et par employeur ;
   palier 1 pour les 34,67 premières heures (modifiable), palier 2 au-delà.
   Un employeur avec 0 h de contrat n'a pas d'heures sup.

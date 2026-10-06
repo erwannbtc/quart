@@ -103,7 +103,7 @@ export function Reglages() {
             <li><b>Durée payée</b> = fin − début − pause. Un poste de nuit qui passe minuit est compté en entier.</li>
             <li><b>Un poste compte pour le jour où il commence</b> : un poste qui débute un dimanche ou un jour férié est majoré en entier ; une nuit du samedi au dimanche ne l'est pas.</li>
             <li>Dimanche et férié le même jour : seule la majoration du <b>jour férié</b> s'applique.</li>
-            <li><b>Nuit</b> : seules les heures dans la plage de nuit sont majorées, pause répartie au prorata.</li>
+            <li><b>Nuit</b> : taux et plage propres à chaque employeur ; seules les heures dans la plage sont majorées, pause répartie au prorata.</li>
             <li><b>Heures sup.</b> : au-delà des heures du contrat, par mois et par employeur.</li>
             <li>Les majorations s'additionnent. <b>Net estimé</b> = brut × (1 − cotisations).</li>
             <li>Jours fériés : les 11 jours fériés nationaux, dont Pâques, l'Ascension et la Pentecôte calculés chaque année.</li>

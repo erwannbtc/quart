@@ -1,12 +1,21 @@
-import type { AppData, PaySettings, ShiftType } from './types';
+import type { AppData, Employer, PaySettings, ShiftType } from './types';
 
 export const DEFAULT_SETTINGS: PaySettings = {
-  rates: { sup1: 25, sup2: 50, night: 20, sunday: 50, holiday: 100 },
+  rates: { sup1: 25, sup2: 50, sunday: 50, holiday: 100 },
   sup1Hours: 34.67,
-  nightStart: 21 * 60,
-  nightEnd: 6 * 60,
   cotisations: 22
 };
+
+/** Majoration de nuit par défaut d'un nouvel employeur : +20 % entre 21:00 et 06:00. */
+export const DEFAULT_NIGHT = { nightRate: 20, nightStart: 21 * 60, nightEnd: 6 * 60 };
+
+export const newEmployer = (id: string, name: string, rate: number, contractHours: number): Employer => ({
+  id,
+  name,
+  rate,
+  contractHours,
+  ...DEFAULT_NIGHT
+});
 
 type TypeTemplate = Omit<ShiftType, 'id' | 'employerId'> & { key: string };
 
@@ -33,7 +42,7 @@ export function defaultData(): AppData {
   return {
     version: 2,
     shiftTypes: [...workTypesFor('emp-1'), ...COMMON_TYPES.map((t) => ({ ...t }))],
-    employers: [{ id: 'emp-1', name: 'Mon employeur', rate: 12, contractHours: 151.67 }],
+    employers: [newEmployer('emp-1', 'Mon employeur', 12, 151.67)],
     shifts: [],
     settings: structuredClone(DEFAULT_SETTINGS)
   };

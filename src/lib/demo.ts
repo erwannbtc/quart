@@ -1,6 +1,6 @@
 // Mode démo : données 100 % FICTIVES, pour filmer l'app sans données personnelles.
 import type { AppData, Shift } from './types';
-import { COMMON_TYPES, DEFAULT_SETTINGS, workTypesFor } from './defaults';
+import { COMMON_TYPES, DEFAULT_SETTINGS, newEmployer, workTypesFor } from './defaults';
 import { addDays, dayOfWeek, daysInMonth, diffDays, mondayOf, toISO } from './dates';
 
 export interface DemoData extends AppData {
@@ -42,7 +42,7 @@ export function buildDemo(year: number, month: number): DemoData {
   return {
     version: 2,
     shiftTypes: types,
-    employers: [{ id: EMP, name: 'Atelier Nord', rate: 14.2, contractHours: 151.67 }],
+    employers: [newEmployer(EMP, 'Atelier Nord', 14.2, 151.67)],
     shifts,
     settings: structuredClone(DEFAULT_SETTINGS),
     today: toISO(year, month, 15)

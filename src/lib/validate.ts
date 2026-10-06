@@ -1,6 +1,6 @@
 // Vérifie un fichier importé (ou le contenu du localStorage) avant de l'utiliser.
 import type { AppData, Employer, Shift, ShiftKind, ShiftType } from './types';
-import { DEFAULT_SETTINGS } from './defaults';
+import { DEFAULT_NIGHT, DEFAULT_SETTINGS } from './defaults';
 import { isValidISO } from './dates';
 
 type Obj = Record<string, unknown>;
@@ -32,9 +32,18 @@ function shiftType(x: unknown): ShiftType | null {
   };
 }
 
-function employer(x: unknown): Employer | null {
+/** `night` : majoration de nuit à utiliser si le fichier n'en a pas pour cet employeur (anciens formats). */
+function employer(x: unknown, night: typeof DEFAULT_NIGHT): Employer | null {
   if (!isObj(x) || !str(x.id) || !str(x.name, 80) || !num(x.rate, 0, 1000) || !num(x.contractHours, 0, 744)) return null;
-  return { id: x.id, name: x.name, rate: x.rate, contractHours: x.contractHours };
+  return {
+    id: x.id,
+    name: x.name,
+    rate: x.rate,
+    contractHours: x.contractHours,
+    nightRate: num(x.nightRate, 0, 500) ? x.nightRate : night.nightRate,
+    nightStart: minutes(x.nightStart) ? x.nightStart : night.nightStart,
+    nightEnd: minutes(x.nightEnd) ? x.nightEnd : night.nightEnd
+  };
 }
 
 function shift(x: unknown): Shift | null {
@@ -61,8 +70,16 @@ function all<T>(list: unknown[], fn: (x: unknown) => T | null): T[] | null {
 export function validateData(x: unknown): AppData | null {
   if (!isObj(x) || (x.version !== 1 && x.version !== 2)) return null;
   if (!Array.isArray(x.shiftTypes) || !Array.isArray(x.employers) || !Array.isArray(x.shifts)) return null;
+  const s = isObj(x.settings) ? x.settings : {};
+  const r = isObj(s.rates) ? s.rates : {};
+  // Avant, la majoration de nuit était commune : elle devient celle de chaque employeur.
+  const oldNight = {
+    nightRate: num(r.night, 0, 500) ? r.night : DEFAULT_NIGHT.nightRate,
+    nightStart: minutes(s.nightStart) ? s.nightStart : DEFAULT_NIGHT.nightStart,
+    nightEnd: minutes(s.nightEnd) ? s.nightEnd : DEFAULT_NIGHT.nightEnd
+  };
   let shiftTypes = all(x.shiftTypes, shiftType);
-  const employers = all(x.employers, employer);
+  const employers = all(x.employers, (e) => employer(e, oldNight));
   let shifts = all(x.shifts, shift);
   if (!shiftTypes?.length || !employers?.length || !shifts) return null;
   const empIds = new Set(employers.map((e) => e.id));
@@ -96,8 +113,6 @@ export function validateData(x: unknown): AppData | null {
   const typeIds = new Set(shiftTypes.map((t) => t.id));
   if (shifts.some((s) => !typeIds.has(s.typeId) || !empIds.has(s.employerId))) return null;
 
-  const s = isObj(x.settings) ? x.settings : {};
-  const r = isObj(s.rates) ? s.rates : {};
   const D = DEFAULT_SETTINGS;
   const pct = (v: unknown, d: number) => (num(v, 0, 500) ? v : d);
   return {
@@ -109,13 +124,10 @@ export function validateData(x: unknown): AppData | null {
       rates: {
         sup1: pct(r.sup1, D.rates.sup1),
         sup2: pct(r.sup2, D.rates.sup2),
-        night: pct(r.night, D.rates.night),
         sunday: pct(r.sunday, D.rates.sunday),
         holiday: pct(r.holiday, D.rates.holiday)
       },
       sup1Hours: num(s.sup1Hours, 0, 744) ? s.sup1Hours : D.sup1Hours,
-      nightStart: minutes(s.nightStart) ? s.nightStart : D.nightStart,
-      nightEnd: minutes(s.nightEnd) ? s.nightEnd : D.nightEnd,
       cotisations: num(s.cotisations, 0, 100) ? s.cotisations : D.cotisations
     }
   };

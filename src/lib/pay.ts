@@ -7,8 +7,9 @@
 //   majoration dimanche ou jour férié, pour toute la durée du poste.
 // - Si le jour est à la fois un dimanche et un jour férié, seule la majoration
 //   « jour férié » s'applique (pas de cumul des deux).
-// - Les heures de nuit = part du poste dans la plage de nuit (21:00–06:00 par
-//   défaut). La pause est répartie au prorata sur tout le poste.
+// - Les heures de nuit = part du poste dans la plage de nuit de l'EMPLOYEUR du
+//   poste (21:00–06:00 et +20 % par défaut, réglables par employeur). La pause
+//   est répartie au prorata sur tout le poste.
 // - Heures sup. : comptées par employeur et par mois, au-delà des heures
 //   contractuelles, dans l'ordre chronologique. Les « sup1Hours » premières
 //   heures sup. sont au palier 1, les suivantes au palier 2. Un employeur avec
@@ -139,7 +140,9 @@ export function shiftPay(
   let day: ShiftPay['day'] = null;
   if (type?.kind === 'work' && hours > 0) {
     const span = spanMinutes(shift.start, shift.end);
-    nightHours = hours * (nightMinutes(shift.start, shift.end, settings.nightStart, settings.nightEnd) / span);
+    if (employer && employer.nightRate > 0) {
+      nightHours = hours * (nightMinutes(shift.start, shift.end, employer.nightStart, employer.nightEnd) / span);
+    }
     if (isHoliday(shift.date)) day = 'holiday';
     else if (isSunday(shift.date)) day = 'sunday';
   }
@@ -147,7 +150,7 @@ export function shiftPay(
   const brut =
     rate *
     (hours * (1 + dayPct / 100) +
-      nightHours * (r.night / 100) +
+      nightHours * ((employer?.nightRate ?? 0) / 100) +
       overtime.sup1 * (r.sup1 / 100) +
       overtime.sup2 * (r.sup2 / 100));
   return { hours, nightHours, sup1: overtime.sup1, sup2: overtime.sup2, day, brut };
