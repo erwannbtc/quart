@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Quart, accueil</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#8A93A6}a:hover{color:#E8EAED}
+button{font-family:inherit}
+@keyframes quartPop{0%{transform:scale(.82)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+@keyframes quartDrop{0%{transform:scale(.55,.7);opacity:0}55%{transform:scale(1.1,.9);opacity:1}75%{transform:scale(.96,1.05)}100%{transform:scale(1,1)}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #000000; isolation: isolate; position: relative; overflow: hidden; color: #E8EAED; font-family: 'Outfit', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+
+<div aria-hidden="true" style="position: absolute; z-index: -1; top: 60px; left: -70px; width: 230px; height: 230px; opacity: 0.28; border-radius: 50%; background: {{accent}}; filter: blur(70px)"></div>
+<div aria-hidden="true" style="position: absolute; z-index: -1; top: 330px; right: -90px; width: 260px; height: 260px; opacity: 0.30; border-radius: 50%; background: #4C8DFF; filter: blur(70px)"></div>
+<div aria-hidden="true" style="position: absolute; z-index: -1; bottom: 40px; left: -60px; width: 240px; height: 240px; opacity: 0.26; border-radius: 50%; background: #9B6DFF; filter: blur(70px)"></div>
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 10px 16px">
+<div style="display: flex; align-items: center; gap: 8px">
+<svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x="0.5" y="0.5" width="27" height="27" rx="8" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.12)"></rect><path d="M8 20 V8 A12 12 0 0 1 20 20 Z" fill="{{accent}}"></path></svg>
+<div style="font-size: 18px; font-weight: 600; letter-spacing: 0.2px">Quart</div>
+</div>
+<div style="display: flex; align-items: center; gap: 2px">
+<button aria-label="Mois précédent" style="width: 44px; height: 44px; background: transparent; border: 0; color: #8A93A6; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"></path></svg></button>
+<div style="font-size: 16px; font-weight: 600; min-width: 104px; text-align: center">Octobre 2026</div>
+<button aria-label="Mois suivant" style="width: 44px; height: 44px; background: transparent; border: 0; color: #8A93A6; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"></path></svg></button>
+</div>
+<a href="Ajouter.dc.html" aria-label="Ajouter un poste" style="width: 44px; height: 44px; border-radius: 12px; background: {{accent}}; color: #06140C; display: flex; align-items: center; justify-content: center"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg></a>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 0 16px">
+
+<div style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; align-items: center; gap: 6px">
+<div style="font-size: 11px; color: #8A93A6; align-self: flex-start">Heures</div>
+<div style="position: relative; width: 68px; height: 68px">
+<svg width="68" height="68" viewBox="0 0 68 68" style="transform: rotate(-90deg)" aria-hidden="true">
+<circle cx="34" cy="34" r="28" fill="none" stroke="rgba(255,255,255,0.12)" stroke-width="7"></circle>
+<circle cx="34" cy="34" r="28" fill="none" stroke="{{accent}}" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.93" stroke-dashoffset="{{ringOff}}" style="transition: {{ringTransition}}"></circle>
+</svg>
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600">{{pct}} %</div>
+</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 11px; text-align: center; line-height: 1.35">{{doneH}} h<span style="color: #8A93A6"> / 151,67</span></div>
+<div style="font-size: 11px; color: #8A93A6">reste {{leftH}} h</div>
+</div>
+
+<div style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 11px; color: #8A93A6">Brut du mois</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 600; letter-spacing: -0.5px; margin-top: 8px">{{brut}}</div>
+<div style="font-size: 11px; color: #8A93A6">euros, à date</div>
+<div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 8px; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 10px; color: #8A93A6">Prévu fin de mois</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 12px">{{brutPlan}} €</div>
+</div>
+</div>
+
+<div style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 10px; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<div style="font-size: 11px; color: #8A93A6">Net</div>
+<div style="font-size: 9px; font-weight: 600; letter-spacing: 0.4px; text-transform: uppercase; color: #A9B2C3; border: 1px solid rgba(255,255,255,0.18); border-radius: 6px; padding: 2px 5px">estimation</div>
+</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 17px; font-weight: 600; letter-spacing: -0.5px; margin-top: 8px; color: {{accent}}">{{net}}</div>
+<div style="font-size: 11px; color: #8A93A6">à date · cotis. ~22 %</div>
+<div style="margin-top: auto; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 8px; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 10px; color: #8A93A6">Prévu fin de mois</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 12px">{{netPlan}} €</div>
+</div>
+</div>
+
+</div>
+
+<div style="margin: 10px 16px 0 16px; background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 12px 10px 10px 10px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; font-size: 11px; color: #8A93A6; text-align: center">
+<div>Lun</div><div>Mar</div><div>Mer</div><div>Jeu</div><div>Ven</div><div>Sam</div><div>Dim</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px">
+<sc-for list="{{days}}" as="d" hint-placeholder-count="31">
+<button onClick="{{d.cycle}}" aria-label="{{d.aria}}" style="grid-column-start: {{d.col}}; height: 50px; border-radius: 10px; border: {{d.border}}; background: {{d.bg}}; box-shadow: {{d.shadow}}; color: #E8EAED; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 0; cursor: pointer; transition: background .45s ease, border-color .45s ease; animation: {{d.anim}}">
+<span style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600">{{d.n}}</span>
+<span style="font-size: 9px; font-weight: 600; letter-spacing: 0.5px; color: {{d.fg}}; transition: color .45s ease">{{d.code}}</span>
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 20px 0 20px; font-size: 11px; color: #A9B2C3">
+<div style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 3px; background: #F5A623"></span>Matin</div>
+<div style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 3px; background: #4C8DFF"></span>Après-midi</div>
+<div style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 3px; background: #9B6DFF"></span>Nuit</div>
+<div style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 3px; background: #6E788A"></span>Repos</div>
+<div style="display: flex; align-items: center; gap: 5px"><span style="width: 9px; height: 9px; border-radius: 3px; background: #7FCFA5"></span>Congé</div>
+</div>
+
+<div style="margin: 10px 16px 0 16px; background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 10px 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 11px; color: #8A93A6">Aujourd'hui · jeu. 15 · Atelier Nord</div>
+<div style="font-size: 15px; font-weight: 600">{{todayLabel}}</div>
+</div>
+<div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums">
+<div style="font-size: 13px">{{todayHours}}</div>
+<div style="font-size: 12px; color: {{accent}}">{{todayGain}}</div>
+</div>
+</div>
+
+<nav style="margin: auto 16px 14px 16px; height: 64px; box-sizing: border-box; padding: 6px; border-radius: 32px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.07); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.05), 0 14px 34px rgba(0,0,0,0.6); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px">
+<a href="Main.dc.html" aria-current="page" style="height: 50px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: {{accent}}; background: radial-gradient(120% 90% at 30% 12%, rgba(255,255,255,0.38), rgba(255,255,255,0.10) 42%, rgba(255,255,255,0.03) 72%); box-shadow: inset 0 1px 1px rgba(255,255,255,0.65), inset 0 -8px 12px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.16), 0 6px 18px rgba(0,0,0,0.55); animation: quartDrop .7s cubic-bezier(.3,1.4,.5,1) both;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>Accueil</a>
+<a href="Postes.dc.html" style="height: 50px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 400; text-decoration: none; color: #A9B2C3;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3.5 2"></path></svg>Postes</a>
+<a href="Postes.dc.html" style="height: 50px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 400; text-decoration: none; color: #A9B2C3;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>Réglages</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#2BD67B","options":["#2BD67B","#35E0C2","#B6F04A"]},"animer":{"editor":"boolean","default":true},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { plan: 'MMRRAAAAARRMMMMMRRAAAACRRMMMMMR'.split(''), t: 0, last: 0, tick: 0 };
+  }
+  componentDidMount() {
+    const t0 = performance.now();
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / 1500);
+      this.setState({ t: p });
+      if (p < 1) this._raf = requestAnimationFrame(step);
+    };
+    this._raf = requestAnimationFrame(step);
+  }
+  componentWillUnmount() { cancelAnimationFrame(this._raf); }
+  renderVals() {
+    const TODAY = 15, RATE = 14.2, CONTRACT = 151.67, COTIS = 0.22;
+    const T = {
+      M: { label: 'Matin', hours: '05:00 – 13:00', rgb: '245,166,35', fg: '#F7BC5C', h: 7.5 },
+      A: { label: 'Après-midi', hours: '13:00 – 21:00', rgb: '76,141,255', fg: '#8DB6FF', h: 7.5 },
+      N: { label: 'Nuit', hours: '21:00 – 05:00', rgb: '155,109,255', fg: '#BDA0FF', h: 7.5 },
+      R: { label: 'Repos', hours: '', rgb: '110,120,138', fg: '#9AA3B4', h: 0 },
+      C: { label: 'Congé', hours: '', rgb: '127,207,165', fg: '#9BDCB9', h: 7 }
+    };
+    const NEXT = { M: 'A', A: 'N', N: 'R', R: 'M', C: 'R' };
+    const accent = this.props.accent ?? '#2BD67B';
+    const animer = this.props.animer ?? true;
+    const raw = animer ? this.state.t : 1;
+    const e = 1 - Math.pow(1 - raw, 3);
+    const plan = this.state.plan;
+    let done = 0, planned = 0, nights = 0;
+    plan.forEach((k, i) => { planned += T[k].h; if (i + 1 <= TODAY) done += T[k].h; if (k === 'N') nights += 1; });
+    const sup = Math.max(0, planned - CONTRACT);
+    const brutPlan = Math.min(planned, CONTRACT) * RATE + Math.min(sup, 34.67) * RATE * 1.25 + Math.max(0, sup - 34.67) * RATE * 1.5 + nights * 7.5 * RATE * 0.2;
+    const brut = done * RATE;
+    const f = (n, d) => n.toLocaleString('fr-FR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    const C = 175.93;
+    const ratio = Math.min(1, done / CONTRACT);
+    const days = plan.map((k, i) => {
+      const n = i + 1, t = T[k], isToday = n === TODAY, past = n < TODAY;
+      return {
+        n: n, code: k === 'R' ? '·' : k, fg: t.fg,
+        col: n === 1 ? '4' : 'auto',
+        bg: 'rgba(' + t.rgb + ',' + (past || isToday ? 0.3 : 0.14) + ')',
+        border: isToday ? '2px solid ' + accent : '1px solid rgba(' + t.rgb + ',0.4)',
+        shadow: isToday ? '0 0 0 3px ' + accent + '40, 0 0 18px ' + accent + '80' : 'none',
+        anim: this.state.last === n ? 'quartPop' + (this.state.tick % 2) + ' .45s ease' : 'none',
+        aria: n + ' octobre, ' + t.label + (isToday ? ', aujourd’hui' : ''),
+        cycle: () => {
+          const p = this.state.plan.slice();
+          p[i] = NEXT[p[i]];
+          this.setState({ plan: p, last: n, tick: this.state.tick + 1 });
+        }
+      };
+    });
+    days.forEach((d) => { d.anim = d.anim.replace(/quartPop\d/, 'quartPop'); });
+    const tk = T[plan[TODAY - 1]];
+    return {
+      accent: accent,
+      days: days,
+      pct: f(ratio * 100 * e, 0),
+      ringOff: C * (1 - ratio * e),
+      ringTransition: raw < 1 ? 'none' : 'stroke-dashoffset .6s ease',
+      doneH: f(done * e, 1),
+      leftH: f(Math.max(0, CONTRACT - done * e), 2),
+      brut: f(brut * e, 2),
+      brutPlan: f(brutPlan, 0),
+      netPlan: f(brutPlan * (1 - COTIS), 0),
+      net: f(brut * (1 - COTIS) * e, 2),
+      todayLabel: tk.hours ? tk.label + ' ' + tk.hours : tk.label,
+      todayHours: tk.h ? f(tk.h, 1) + ' h' : '0 h',
+      todayGain: '+' + f(tk.h * RATE, 2) + ' € brut'
+    };
+  }
+}
+</script>
+</body>
+</html>

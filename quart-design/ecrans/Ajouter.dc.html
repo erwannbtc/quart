@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Quart, ajouter un poste</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#8A93A6}a:hover{color:#E8EAED}
+button{font-family:inherit}
+@keyframes quartSheet{from{transform:translateY(100%)}to{transform:translateY(0)}}
+@keyframes quartDim{from{opacity:0}to{opacity:1}}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #000000; isolation: isolate; position: relative; overflow: hidden; color: #E8EAED; font-family: 'Outfit', system-ui, sans-serif; position: relative; overflow: hidden">
+
+<div aria-hidden="true" style="position: absolute; z-index: -1; top: 60px; left: -70px; width: 230px; height: 230px; opacity: 0.28; border-radius: 50%; background: {{accent}}; filter: blur(70px)"></div>
+<div aria-hidden="true" style="position: absolute; z-index: -1; top: 330px; right: -90px; width: 260px; height: 260px; opacity: 0.30; border-radius: 50%; background: #4C8DFF; filter: blur(70px)"></div>
+<div aria-hidden="true" style="position: absolute; z-index: -1; bottom: 40px; left: -60px; width: 240px; height: 240px; opacity: 0.26; border-radius: 50%; background: #9B6DFF; filter: blur(70px)"></div>
+<div aria-hidden="true" style="padding: 22px 16px 0 16px; display: flex; flex-direction: column; gap: 12px">
+<div style="font-size: 16px; font-weight: 600; text-align: center">Octobre 2026</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<div style="height: 92px; background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px"></div>
+<div style="height: 92px; background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px"></div>
+<div style="height: 92px; background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px"></div>
+</div>
+</div>
+
+<div style="position: absolute; inset: 0; background: rgba(4,6,10,0.72); animation: quartDim .3s ease both"></div>
+
+<div role="dialog" aria-label="Ajouter un poste" style="position: absolute; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border-top: 1px solid rgba(255,255,255,0.18); border-radius: 22px 22px 0 0; padding: 8px 16px 20px 16px; display: flex; flex-direction: column; gap: 14px; animation: quartSheet .45s cubic-bezier(.2,.8,.2,1) both">
+
+<div style="width: 40px; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.18); align-self: center"></div>
+
+<div style="display: flex; align-items: center; justify-content: space-between">
+<h1 style="margin: 0; font-size: 20px; font-weight: 600">Ajouter un poste</h1>
+<a href="Main.dc.html" aria-label="Fermer" style="width: 44px; height: 44px; margin-right: -10px; display: flex; align-items: center; justify-content: center; color: #8A93A6"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"></path></svg></a>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; color: #8A93A6">Type de poste</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{types}}" as="t" hint-placeholder-count="5">
+<button onClick="{{t.pick}}" aria-pressed="{{t.on}}" style="height: 46px; border-radius: 12px; border: {{t.border}}; background: {{t.bg}}; color: #E8EAED; font-size: 14px; font-weight: 500; display: flex; align-items: center; justify-content: center; gap: 7px; cursor: pointer; transition: background .3s ease, border-color .3s ease">
+<span style="width: 9px; height: 9px; border-radius: 3px; background: {{t.color}}"></span>{{t.label}}
+</button>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; color: #8A93A6">Date</div>
+<button style="height: 48px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 0 12px; color: #E8EAED; font-size: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer">
+<span>Samedi 17 octobre 2026</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8A93A6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>
+</button>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px; opacity: {{timeOpacity}}; transition: opacity .3s ease">
+<div style="font-size: 12px; color: #8A93A6">Horaires</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+<sc-for list="{{fields}}" as="f" hint-placeholder-count="3">
+<div style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; display: flex; flex-direction: column; align-items: center; padding-top: 8px">
+<div style="font-size: 11px; color: #8A93A6">{{f.label}}</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 19px; font-weight: 600; padding: 4px 0 2px 0">{{f.value}}</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; border-top: 1px solid rgba(255,255,255,0.12)">
+<button onClick="{{f.dec}}" aria-label="{{f.ariaDec}}" style="height: 44px; background: transparent; border: 0; border-right: 1px solid rgba(255,255,255,0.12); color: #C9CFDA; font-size: 20px; cursor: pointer">−</button>
+<button onClick="{{f.inc}}" aria-label="{{f.ariaInc}}" style="height: 44px; background: transparent; border: 0; color: #C9CFDA; font-size: 20px; cursor: pointer">+</button>
+</div>
+</div>
+</sc-for>
+</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 8px">
+<div style="font-size: 12px; color: #8A93A6">Employeur</div>
+<button style="height: 48px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 0 12px; color: #E8EAED; font-size: 15px; display: flex; align-items: center; justify-content: space-between; cursor: pointer">
+<span>Atelier Nord</span>
+<span style="display: flex; align-items: center; gap: 8px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 13px; color: #A9B2C3">14,20 €/h<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A93A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"></path></svg></span>
+</button>
+</div>
+
+<div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid rgba(255,255,255,0.12); padding-top: 12px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 12px; color: #8A93A6">Durée payée</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600">{{duree}}</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-end">
+<div style="font-size: 12px; color: #8A93A6">Brut estimé</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 600; color: {{accent}}">{{gain}}</div>
+</div>
+</div>
+
+<a href="Main.dc.html" style="height: 52px; border-radius: 18px; background: {{accent}}; color: #06140C; font-size: 16px; font-weight: 600; text-decoration: none; display: flex; align-items: center; justify-content: center">Enregistrer</a>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#2BD67B","options":["#2BD67B","#35E0C2","#B6F04A"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { type: 'M', start: 300, end: 780, pause: 30 };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#2BD67B';
+    const s = this.state;
+    const RATE = 14.2;
+    const T = [
+      { id: 'M', label: 'Matin', color: '#F5A623', rgb: '245,166,35', start: 300, end: 780 },
+      { id: 'A', label: 'Après-midi', color: '#4C8DFF', rgb: '76,141,255', start: 780, end: 1260 },
+      { id: 'N', label: 'Nuit', color: '#9B6DFF', rgb: '155,109,255', start: 1260, end: 300 },
+      { id: 'R', label: 'Repos', color: '#6E788A', rgb: '110,120,138' },
+      { id: 'C', label: 'Congé', color: '#7FCFA5', rgb: '127,207,165' }
+    ];
+    const worked = s.type !== 'R' && s.type !== 'C';
+    const hm = (m) => {
+      const x = ((m % 1440) + 1440) % 1440;
+      return String(Math.floor(x / 60)).padStart(2, '0') + ':' + String(x % 60).padStart(2, '0');
+    };
+    const span = (((s.end - s.start) % 1440) + 1440) % 1440;
+    const paid = s.type === 'C' ? 420 : worked ? Math.max(0, span - s.pause) : 0;
+    const add = (k, d) => () => {
+      const o = {};
+      o[k] = k === 'pause' ? Math.max(0, Math.min(90, s.pause + d)) : s[k] + d;
+      this.setState(o);
+    };
+    return {
+      accent: accent,
+      types: T.map((t) => ({
+        label: t.label, color: t.color, on: s.type === t.id,
+        bg: s.type === t.id ? 'rgba(' + t.rgb + ',0.22)' : 'rgba(255,255,255,0.06)',
+        border: s.type === t.id ? '1px solid ' + t.color : '1px solid rgba(255,255,255,0.18)',
+        pick: () => this.setState(t.start !== undefined ? { type: t.id, start: t.start, end: t.end } : { type: t.id })
+      })),
+      timeOpacity: worked ? 1 : 0.35,
+      fields: [
+        { label: 'Début', value: worked ? hm(s.start) : '--:--', dec: add('start', -15), inc: add('start', 15), ariaDec: 'Début, 15 minutes plus tôt', ariaInc: 'Début, 15 minutes plus tard' },
+        { label: 'Fin', value: worked ? hm(s.end) : '--:--', dec: add('end', -15), inc: add('end', 15), ariaDec: 'Fin, 15 minutes plus tôt', ariaInc: 'Fin, 15 minutes plus tard' },
+        { label: 'Pause', value: worked ? s.pause + ' min' : '--', dec: add('pause', -5), inc: add('pause', 5), ariaDec: 'Pause, 5 minutes de moins', ariaInc: 'Pause, 5 minutes de plus' }
+      ],
+      duree: Math.floor(paid / 60) + ' h ' + String(paid % 60).padStart(2, '0'),
+      gain: '+' + (paid / 60 * RATE).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'
+    };
+  }
+}
+</script>
+</body>
+</html>

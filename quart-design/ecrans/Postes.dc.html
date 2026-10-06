@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Quart, postes et taux</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#8A93A6}a:hover{color:#E8EAED}
+button,input{font-family:inherit}
+@keyframes quartDrop{0%{transform:scale(.55,.7);opacity:0}55%{transform:scale(1.1,.9);opacity:1}75%{transform:scale(.96,1.05)}100%{transform:scale(1,1)}}
+</style>
+</helmet>
+<div style="width: 390px; min-height: 1400px; box-sizing: border-box; background: #000000; isolation: isolate; position: relative; overflow: hidden; color: #E8EAED; font-family: 'Outfit', system-ui, sans-serif; display: flex; flex-direction: column">
+
+<div aria-hidden="true" style="position: absolute; z-index: -1; top: 60px; left: -70px; width: 230px; height: 230px; opacity: 0.28; border-radius: 50%; background: {{accent}}; filter: blur(70px)"></div>
+<div aria-hidden="true" style="position: absolute; z-index: -1; top: 330px; right: -90px; width: 260px; height: 260px; opacity: 0.30; border-radius: 50%; background: #4C8DFF; filter: blur(70px)"></div>
+<div aria-hidden="true" style="position: absolute; z-index: -1; bottom: 40px; left: -60px; width: 240px; height: 240px; opacity: 0.26; border-radius: 50%; background: #9B6DFF; filter: blur(70px)"></div>
+<div style="padding: 20px 16px 12px 16px; display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 22px; font-weight: 600">Postes et taux</div>
+<div style="font-size: 13px; color: #8A93A6">Ces valeurs servent au calcul du brut et du net estimé.</div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px; padding: 0 16px 16px 16px">
+
+<section style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 4px 14px">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #8A93A6">Types de postes</h2>
+<a href="Ajouter.dc.html" style="font-size: 13px; font-weight: 600; text-decoration: none; color: {{accent}}; height: 44px; display: flex; align-items: center">Ajouter</a>
+</div>
+<sc-for list="{{types}}" as="p" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; gap: 12px; height: 60px; border-top: 1px solid rgba(255,255,255,0.12)">
+<span style="width: 12px; height: 28px; border-radius: 4px; background: {{p.color}}"></span>
+<div style="display: flex; flex-direction: column; gap: 2px; flex-grow: 1">
+<div style="font-size: 15px; font-weight: 500">{{p.label}}</div>
+<div style="font-size: 12px; color: #8A93A6">{{p.pause}}</div>
+</div>
+<div style="font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 13px; color: #C9CFDA">{{p.hours}}</div>
+<button aria-label="{{p.aria}}" style="width: 44px; height: 44px; margin-right: -10px; background: transparent; border: 0; color: #8A93A6; display: flex; align-items: center; justify-content: center; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4l10.5-10.5-4-4L4 16v4zM13.5 6.5l4 4"></path></svg></button>
+</div>
+</sc-for>
+</section>
+
+<section style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 4px 14px 14px 14px; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: space-between; height: 44px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #8A93A6">Employeur</h2>
+<button style="font-size: 13px; font-weight: 600; background: transparent; border: 0; padding: 0; height: 44px; color: {{accent}}; cursor: pointer">Ajouter</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="emp-nom" style="font-size: 12px; color: #8A93A6">Nom</label>
+<input id="emp-nom" type="text" defaultValue="Atelier Nord" style="height: 46px; box-sizing: border-box; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 0 12px; color: #E8EAED; font-size: 15px">
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="emp-taux" style="font-size: 12px; color: #8A93A6">Taux horaire brut (€/h)</label>
+<input id="emp-taux" type="text" inputMode="decimal" defaultValue="14,20" style="height: 46px; box-sizing: border-box; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 0 12px; color: #E8EAED; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 15px">
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px">
+<label for="emp-heures" style="font-size: 12px; color: #8A93A6">Heures contrat / mois</label>
+<input id="emp-heures" type="text" inputMode="decimal" defaultValue="151,67" style="height: 46px; box-sizing: border-box; width: 100%; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px; padding: 0 12px; color: #E8EAED; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 15px">
+</div>
+</div>
+</div>
+</section>
+
+<section style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 4px 14px">
+<div style="display: flex; align-items: center; height: 44px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #8A93A6">Majorations</h2>
+</div>
+<sc-for list="{{majos}}" as="m" hint-placeholder-count="5">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 60px; border-top: 1px solid rgba(255,255,255,0.12)">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 500">{{m.label}}</div>
+<div style="font-size: 12px; color: #8A93A6">{{m.hint}}</div>
+</div>
+<div style="display: flex; align-items: center; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px">
+<button onClick="{{m.dec}}" aria-label="{{m.ariaDec}}" style="width: 44px; height: 44px; background: transparent; border: 0; color: #C9CFDA; font-size: 20px; cursor: pointer">−</button>
+<div style="min-width: 52px; text-align: center; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600">{{m.value}}</div>
+<button onClick="{{m.inc}}" aria-label="{{m.ariaInc}}" style="width: 44px; height: 44px; background: transparent; border: 0; color: #C9CFDA; font-size: 20px; cursor: pointer">+</button>
+</div>
+</div>
+</sc-for>
+</section>
+
+<section style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 4px 14px 14px 14px">
+<div style="display: flex; align-items: center; height: 44px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #8A93A6">Cotisations sociales</h2>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 60px; border-top: 1px solid rgba(255,255,255,0.12)">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 500">Taux appliqué</div>
+<div style="font-size: 12px; color: #8A93A6">Sert au net estimé</div>
+</div>
+<div style="display: flex; align-items: center; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.18); border-radius: 12px">
+<button onClick="{{cotisDec}}" aria-label="Baisser le taux de cotisations" style="width: 44px; height: 44px; background: transparent; border: 0; color: #C9CFDA; font-size: 20px; cursor: pointer">−</button>
+<div style="min-width: 52px; text-align: center; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 600">{{cotis}} %</div>
+<button onClick="{{cotisInc}}" aria-label="Augmenter le taux de cotisations" style="width: 44px; height: 44px; background: transparent; border: 0; color: #C9CFDA; font-size: 20px; cursor: pointer">+</button>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 12px; padding: 10px 12px; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; font-size: 13px">
+<span style="color: #8A93A6">100,00 € brut</span>
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8A93A6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+<span style="color: {{accent}}; font-weight: 600">{{netSample}} € net estimé</span>
+</div>
+</section>
+
+<section style="background: rgba(255,255,255,0.07); backdrop-filter: blur(26px) saturate(170%); -webkit-backdrop-filter: blur(26px) saturate(170%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), inset 0 -1px 0 rgba(255,255,255,0.04), 0 10px 30px rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.12); border-radius: 22px; padding: 4px 14px 14px 14px">
+<div style="display: flex; align-items: center; height: 44px">
+<h2 style="margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: #8A93A6">Cycle de rotation</h2>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; height: 60px; border-top: 1px solid rgba(255,255,255,0.12)">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 15px; font-weight: 500">Planning 2x8 automatique</div>
+<div style="font-size: 12px; color: #8A93A6">1 semaine matin, 1 semaine après-midi</div>
+</div>
+<button onClick="{{toggleCycle}}" aria-pressed="{{cycleOn}}" aria-label="Activer le cycle 2x8" style="width: 52px; height: 44px; background: transparent; border: 0; padding: 0; cursor: pointer; display: flex; align-items: center">
+<span style="width: 52px; height: 30px; border-radius: 15px; background: {{switchBg}}; border: 1px solid {{switchBorder}}; box-sizing: border-box; position: relative; transition: background .25s ease; display: block">
+<span style="position: absolute; top: 3px; left: {{knobLeft}}; width: 22px; height: 22px; border-radius: 11px; background: {{knobBg}}; transition: left .25s ease"></span>
+</span>
+</button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 6px; opacity: {{cycleOpacity}}; transition: opacity .25s ease">
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px; font-size: 10px; color: #8A93A6; text-align: center">
+<div>L</div><div>M</div><div>M</div><div>J</div><div>V</div><div>S</div><div>D</div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 5px">
+<sc-for list="{{cycle}}" as="c" hint-placeholder-count="14">
+<div style="height: 26px; border-radius: 7px; background: {{c.bg}}; border: 1px solid {{c.bd}}; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 600; color: {{c.fg}}">{{c.code}}</div>
+</sc-for>
+</div>
+<div style="font-size: 12px; color: #8A93A6; padding-top: 2px">Début du cycle : lundi 12 octobre 2026 (matin)</div>
+</div>
+</section>
+
+</div>
+
+<nav style="margin: auto 16px 14px 16px; height: 64px; box-sizing: border-box; padding: 6px; border-radius: 32px; border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.07); backdrop-filter: blur(30px) saturate(180%); -webkit-backdrop-filter: blur(30px) saturate(180%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.28), inset 0 -1px 0 rgba(255,255,255,0.05), 0 14px 34px rgba(0,0,0,0.6); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px">
+<a href="Main.dc.html" style="height: 50px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 400; text-decoration: none; color: #A9B2C3;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5" width="17" height="15" rx="3"></rect><path d="M3.5 10h17M8 3v4M16 3v4"></path></svg>Accueil</a>
+<a href="Postes.dc.html" aria-current="page" style="height: 50px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 600; text-decoration: none; color: {{accent}}; background: radial-gradient(120% 90% at 30% 12%, rgba(255,255,255,0.38), rgba(255,255,255,0.10) 42%, rgba(255,255,255,0.03) 72%); box-shadow: inset 0 1px 1px rgba(255,255,255,0.65), inset 0 -8px 12px rgba(255,255,255,0.08), inset 0 0 0 1px rgba(255,255,255,0.16), 0 6px 18px rgba(0,0,0,0.55); animation: quartDrop .7s cubic-bezier(.3,1.4,.5,1) both;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"></circle><path d="M12 7v5l3.5 2"></path></svg>Postes</a>
+<a href="Postes.dc.html" style="height: 50px; border-radius: 26px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 11px; font-weight: 400; text-decoration: none; color: #A9B2C3;"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"></path><circle cx="16" cy="7" r="2"></circle><circle cx="8" cy="17" r="2"></circle></svg>Réglages</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#2BD67B","options":["#2BD67B","#35E0C2","#B6F04A"]},"$preview":{"width":390,"height":1400}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { v: { sup1: 25, sup2: 50, nuit: 20, dim: 50, ferie: 100 }, cotis: 22, cycleOn: true };
+  }
+  renderVals() {
+    const accent = this.props.accent ?? '#2BD67B';
+    const s = this.state;
+    const bump = (k, d) => () => {
+      const v = Object.assign({}, this.state.v);
+      v[k] = Math.max(0, Math.min(200, v[k] + d));
+      this.setState({ v: v });
+    };
+    const defs = [
+      ['sup1', 'Heures sup. (palier 1)', 'De la 36e à la 43e heure'],
+      ['sup2', 'Heures sup. (palier 2)', 'Au-delà de la 43e heure'],
+      ['nuit', 'Travail de nuit', 'Heures entre 21:00 et 06:00'],
+      ['dim', 'Dimanche', 'Toutes les heures du dimanche'],
+      ['ferie', 'Jours fériés', 'Toutes les heures travaillées']
+    ];
+    const col = { M: '245,166,35', A: '76,141,255', R: '110,120,138' };
+    const fg = { M: '#F7BC5C', A: '#8DB6FF', R: '#9AA3B4' };
+    return {
+      accent: accent,
+      types: [
+        { label: 'Matin', hours: '05:00 – 13:00', pause: 'Pause 30 min', color: '#F5A623', aria: 'Modifier le poste Matin' },
+        { label: 'Après-midi', hours: '13:00 – 21:00', pause: 'Pause 30 min', color: '#4C8DFF', aria: 'Modifier le poste Après-midi' },
+        { label: 'Nuit', hours: '21:00 – 05:00', pause: 'Pause 30 min', color: '#9B6DFF', aria: 'Modifier le poste Nuit' },
+        { label: 'Repos', hours: '—', pause: 'Non travaillé', color: '#6E788A', aria: 'Modifier le poste Repos' }
+      ],
+      majos: defs.map((d) => ({
+        label: d[1], hint: d[2], value: '+' + s.v[d[0]] + ' %',
+        dec: bump(d[0], -5), inc: bump(d[0], 5),
+        ariaDec: 'Baisser : ' + d[1], ariaInc: 'Augmenter : ' + d[1]
+      })),
+      cotis: s.cotis,
+      cotisDec: () => this.setState({ cotis: Math.max(0, s.cotis - 1) }),
+      cotisInc: () => this.setState({ cotis: Math.min(60, s.cotis + 1) }),
+      netSample: (100 - s.cotis).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      cycleOn: s.cycleOn,
+      toggleCycle: () => this.setState({ cycleOn: !s.cycleOn }),
+      switchBg: s.cycleOn ? accent : 'rgba(255,255,255,0.06)',
+      switchBorder: s.cycleOn ? accent : 'rgba(255,255,255,0.18)',
+      knobLeft: s.cycleOn ? '25px' : '3px',
+      knobBg: s.cycleOn ? '#06140C' : '#8A93A6',
+      cycleOpacity: s.cycleOn ? 1 : 0.35,
+      cycle: 'MMMMMRRAAAAARR'.split('').map((k) => ({
+        code: k === 'R' ? '·' : k, fg: fg[k],
+        bg: 'rgba(' + col[k] + ',0.2)', bd: 'rgba(' + col[k] + ',0.4)'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>
